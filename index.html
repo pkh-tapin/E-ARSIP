@@ -144,17 +144,43 @@
         lucide.createIcons();
 
         // --- KONFIGURASI API ---
-        // Ganti URL ini dengan Web App URL dari Google Apps Script Anda nanti
+        // PASTIKAN ANDA MENGGANTI URL DI BAWAH INI DENGAN URL WEB APP GAS ANDA
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbynbDyrrPkY6vBkJkryaHItZX1UTsqJQWbHHpHKLRARcVXlSeCf97Xj4wjgdZCL4rrN/exec'; 
 
-        // --- DATA MOCKUP (Simulasi Database sebelum terhubung ke GAS) ---
-        let dataArsip = [
-            { id: 1, nama: 'Laporan_Keuangan_Q1_2026.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan' },
-            { id: 2, nama: 'Presentasi_Proyek_Monster.pptx', tipe: 'ppt', tanggal: '14 Apr 2026', ukuran: '5.1 MB', kategori: 'Proyek' },
-            { id: 3, nama: 'Kontrak_Kerja_Karyawan_Baru.docx', tipe: 'word', tanggal: '10 Apr 2026', ukuran: '1.2 MB', kategori: 'HRD' },
-            { id: 4, nama: 'Data_Inventaris_Gudang.xlsx', tipe: 'excel', tanggal: '05 Apr 2026', ukuran: '800 KB', kategori: 'Logistik' },
-            { id: 5, nama: 'Surat_Edaran_Libur_Lebaran.pdf', tipe: 'pdf', tanggal: '01 Apr 2026', ukuran: '500 KB', kategori: 'Umum' },
-        ];
+        // --- DATA STATE ---
+        let dataArsip = [];
+        let isLoading = true; // Status loading saat mengambil data dari Drive
+
+        // --- FUNGSI MENGAMBIL DATA DARI GAS ---
+        async function fetchData() {
+            isLoading = true;
+            renderDashboard(); // Render dengan status loading
+            
+            try {
+                // Cek jika URL belum diganti (masih bawaan template)
+                if(GAS_API_URL.includes('AKfycb...')) {
+                    console.warn("Menggunakan data Mockup karena URL API belum diganti.");
+                    dataArsip = [
+                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan' }
+                    ];
+                } else {
+                    const response = await fetch(GAS_API_URL);
+                    const result = await response.json();
+                    
+                    if(Array.isArray(result)) {
+                        dataArsip = result; // Data berhasil dibaca dari Drive!
+                    } else if(result.error) {
+                        showToast("Error dari Drive: " + result.error);
+                    }
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data:", error);
+                showToast("Gagal terhubung ke Database Google Drive.");
+            } finally {
+                isLoading = false;
+                navigate('dashboard'); // Perbarui tampilan setelah data masuk
+            }
+        }
 
         // --- RENDERER HALAMAN ---
         const contentArea = document.getElementById('app-content');
@@ -164,7 +190,14 @@
             let totalFiles = dataArsip.length;
             
             // Hitung dokumen terbaru (3 teratas)
-            let recentFilesHtml = dataArsip.slice(0, 3).map(file => createFileCard(file)).join('');
+            let recentFilesHtml = '';
+            if (isLoading) {
+                recentFilesHtml = `<div class="col-span-full text-center py-6 text-slate-400"><i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2 text-monster"></i> Membaca dari Google Drive...</div>`;
+            } else if (totalFiles === 0) {
+                recentFilesHtml = `<div class="col-span-full text-center py-6 text-slate-400">Belum ada dokumen.</div>`;
+            } else {
+                recentFilesHtml = dataArsip.slice(0, 3).map(file => createFileCard(file)).join('');
+            }
 
             contentArea.innerHTML = `
                 <div class="fade-in">
@@ -358,7 +391,7 @@
             
             const filtered = dataArsip.filter(file => 
                 file.nama.toLowerCase().includes(query) || 
-                file.kategori.toLowerCase().includes(query)
+                (file.kategori && file.kategori.toLowerCase().includes(query))
             );
 
             if(filtered.length === 0) {
@@ -373,7 +406,7 @@
             lucide.createIcons();
         }
 
-        // Simulasi Upload & Simpan Data
+        // Proses Upload Real ke Google Drive
         function handleUpload(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
@@ -386,38 +419,62 @@
                 return;
             }
 
+            const file = fileInput.files[0];
+
+            // Cek jika URL belum di-set
+            if(GAS_API_URL.includes('AKfycb...')) {
+                alert("Anda belum memasukkan URL API Google Apps Script. Data tidak dapat diunggah ke Drive.");
+                return;
+            }
+
             // UI Loading state
-            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Mengunggah...`;
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Mengunggah ke Drive...`;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.disabled = true;
             lucide.createIcons();
 
-            /* * DI SINI TEMPAT API GOOGLE APPS SCRIPT ANDA BEKERJA
-             * Contoh logika FETCH (di-comment karena butuh endpoint asli):
-             *
-             * const formData = new FormData();
-             * formData.append('file', fileInput.files[0]);
-             * formData.append('nama', docName);
-             * * fetch(GAS_API_URL, { method: 'POST', body: formData })
-             * .then(res => res.json())
-             * .then(res => { sukses(); })
-             */
-
-            // Simulasi proses delay jaringan (2 detik)
-            setTimeout(() => {
-                // Tambah data ke mockup array
-                const newFile = {
-                    id: Date.now(),
-                    nama: docName,
-                    tipe: fileInput.files[0].name.split('.').pop().toLowerCase(),
-                    tanggal: 'Hari ini',
-                    ukuran: (fileInput.files[0].size / 1024 / 1024).toFixed(1) + ' MB',
-                    kategori: docCategory
+            // Membaca file dan mengirim ke GAS via Base64
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // Mengambil string base64 murni tanpa header mime-type
+                const base64Data = event.target.result.split(',')[1];
+                
+                const payload = {
+                    fileName: file.name,
+                    mimeType: file.type,
+                    fileData: base64Data
                 };
-                dataArsip.unshift(newFile); // Taruh di paling atas
 
-                showToast('Arsip berhasil disimpan ke Drive!');
-                navigate('dashboard'); // Kembali ke depan
-            }, 2000);
+                fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if(res.status === 'success') {
+                        showToast('File berhasil terkirim ke Google Drive!');
+                        fetchData(); // Refresh data dari drive setelah upload sukses
+                    } else {
+                        alert("Gagal mengunggah: " + (res.message || "Unknown Error"));
+                        resetBtn();
+                    }
+                })
+                .catch(err => {
+                    console.error("Upload error:", err);
+                    alert("Kesalahan jaringan. Pastikan URL Web App benar dan bisa diakses.");
+                    resetBtn();
+                });
+            };
+            
+            // Eksekusi pembacaan file
+            reader.readAsDataURL(file);
+
+            function resetBtn() {
+                btn.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Simpan ke Drive`;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btn.disabled = false;
+                lucide.createIcons();
+            }
         }
 
         // Sistem Navigasi & Active State
@@ -457,7 +514,7 @@
 
         // Inisialisasi awal
         window.onload = () => {
-            navigate('dashboard');
+            fetchData(); // Mulai dengan menarik data dari Google Drive
         };
 
     </script>
