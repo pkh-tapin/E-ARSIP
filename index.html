@@ -180,8 +180,8 @@
                     // Delay simulasi untuk memperlihatkan animasi skeleton yang elegan
                     await new Promise(resolve => setTimeout(resolve, 1500)); 
                     dataArsip = [
-                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan', url: '#' },
-                        { id: 2, nama: 'Data_Pegawai.xlsx', tipe: 'xlsx', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'Kepegawaian', url: '#' }
+                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'DATA', url: '#' },
+                        { id: 2, nama: 'SK_Pegawai.xlsx', tipe: 'xlsx', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
                     ];
                 } else {
                     const response = await fetch(GAS_API_URL);
@@ -307,8 +307,16 @@
                             </div>
 
                             <div>
-                                <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Kategori (Otomatis)</label>
-                                <input type="text" id="docCategory" readonly placeholder="Terdeteksi otomatis..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-monster font-semibold cursor-not-allowed focus:outline-none">
+                                <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Kategori (Auto / Manual)</label>
+                                <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-monster font-semibold focus:outline-none focus:border-monster/50 transition-colors cursor-pointer">
+                                    <option value="FILE">FILE</option>
+                                    <option value="SURAT MASUK">SURAT MASUK</option>
+                                    <option value="SURAT KELUAR">SURAT KELUAR</option>
+                                    <option value="PEMBERITAHUAN">PEMBERITAHUAN</option>
+                                    <option value="SK">SK</option>
+                                    <option value="DATA">DATA</option>
+                                    <option value="LAINYA">LAINYA</option>
+                                </select>
                             </div>
                         </div>
 
@@ -330,15 +338,16 @@
                     document.getElementById('fileNameDisplay').innerHTML = `<span class="text-monster font-semibold truncate block px-4">${fullName}</span>`;
                     document.getElementById('docName').value = nameWithoutExt;
 
-                    let detectedCategory = 'Umum';
+                    let detectedCategory = 'FILE'; // Kategori Default
                     const lowerName = nameWithoutExt.toLowerCase();
 
-                    if (lowerName.includes('sk') || lowerName.includes('keputusan')) detectedCategory = 'SK (Surat Keputusan)';
-                    else if (lowerName.includes('st') || lowerName.includes('tugas')) detectedCategory = 'ST (Surat Tugas)';
-                    else if (lowerName.includes('laporan') || lowerName.includes('lap')) detectedCategory = 'Laporan';
-                    else if (lowerName.includes('keuangan') || lowerName.includes('uang') || lowerName.includes('invoice')) detectedCategory = 'Keuangan';
-                    else if (lowerName.includes('hrd') || lowerName.includes('pegawai') || lowerName.includes('kontrak')) detectedCategory = 'Kepegawaian';
-                    else if (lowerName.includes('undangan')) detectedCategory = 'Undangan';
+                    // Logika pendeteksian otomatis berdasarkan daftar opsi baru
+                    if (lowerName.includes('sk') || lowerName.includes('keputusan')) detectedCategory = 'SK';
+                    else if (lowerName.includes('masuk')) detectedCategory = 'SURAT MASUK';
+                    else if (lowerName.includes('keluar')) detectedCategory = 'SURAT KELUAR';
+                    else if (lowerName.includes('pemberitahuan') || lowerName.includes('undangan') || lowerName.includes('edaran')) detectedCategory = 'PEMBERITAHUAN';
+                    else if (lowerName.includes('data') || lowerName.includes('laporan') || lowerName.includes('keuangan')) detectedCategory = 'DATA';
+                    else if (lowerName.includes('lain')) detectedCategory = 'LAINYA';
 
                     document.getElementById('docCategory').value = detectedCategory;
                 }
@@ -488,7 +497,7 @@
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span>${file.ukuran || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md truncate">${file.kategori || 'Umum'}</span>
+                                <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md truncate">${file.kategori || 'FILE'}</span>
                             </div>
                         </div>
                     </div>
@@ -541,6 +550,7 @@
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
             const fileInput = document.getElementById('fileInput');
+            const docCategory = document.getElementById('docCategory').value;
 
             if(fileInput.files.length === 0) return alert("Pilih file terlebih dahulu!");
             
@@ -558,7 +568,13 @@
             const reader = new FileReader();
             reader.onload = function(event) {
                 const base64Data = event.target.result.split(',')[1];
-                const payload = { fileName: file.name, mimeType: file.type, fileData: base64Data };
+                const payload = { 
+                    fileName: file.name, 
+                    mimeType: file.type, 
+                    fileData: base64Data,
+                    // Kategori ini bisa ditangkap di backend (GAS) jika Anda ingin menggunakannya nanti
+                    category: docCategory 
+                };
 
                 fetch(GAS_API_URL, {
                     method: 'POST',
@@ -572,7 +588,7 @@
                         // Reset Form
                         fileInput.value = '';
                         document.getElementById('docName').value = '';
-                        document.getElementById('docCategory').value = '';
+                        document.getElementById('docCategory').value = 'FILE';
                         document.getElementById('fileNameDisplay').innerText = 'Ketuk untuk memilih file dokumen';
                         
                         resetBtn();
