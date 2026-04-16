@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Arsip Pro | Monster Edition</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config untuk Warna Hijau Monster -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        monster: '#39FF14', // Hijau Monster Neon
+                        monsterDark: '#2ebd0d',
+                        darkBg: '#0b1121', // Latar belakang gelap
+                        glassBg: 'rgba(17, 24, 39, 0.7)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            background-color: #0b1121;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(114,100%,54%,0.05) 0, transparent 50%);
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Efek Kaca (Glassmorphism) */
+        .glass {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(57, 255, 20, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            border-color: #39FF14;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+            outline: none;
+        }
+
+        /* Sembunyikan Scrollbar tapi tetap bisa di-scroll */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(57, 255, 20, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(57, 255, 20, 0.5); }
+
+        /* Animasi Transisi Halaman */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden font-sans">
+
+    <!-- Kontainer Utama Aplikasi -->
+    <div class="flex-1 w-full max-w-md md:max-w-5xl lg:max-w-6xl mx-auto relative flex flex-col h-full glass border-x-0 sm:border-x border-monster/20 sm:my-4 sm:rounded-3xl sm:h-[calc(100vh-2rem)] shadow-2xl shadow-monster/5">
+        
+        <!-- Header -->
+        <header class="px-6 pt-8 pb-4 z-10">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white tracking-wide">E-<span class="text-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">Arsip</span></h1>
+                    <p class="text-xs md:text-sm text-slate-400 mt-1">Sistem Manajemen Dokumen</p>
+                </div>
+                <div class="w-10 h-10 rounded-full border-2 border-monster flex items-center justify-center bg-slate-800 relative overflow-hidden">
+                    <i data-lucide="user" class="text-monster w-5 h-5"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Area Konten Dinamis -->
+        <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-24 fade-in">
+            <!-- Konten akan di-render di sini oleh JavaScript -->
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 px-6 py-4 z-20">
+            <div class="flex justify-between md:justify-center md:gap-24 items-center">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center gap-1 text-monster transition-colors w-16">
+                    <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-medium">Dashboard</span>
+                </button>
+                <button onclick="navigate('search')" id="nav-search" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-monster transition-colors w-16">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-medium">Cari File</span>
+                </button>
+                
+                <!-- Tombol Tambah Tengah (Floating) -->
+                <div class="relative -top-8">
+                    <button onclick="navigate('input')" class="w-14 h-14 rounded-full bg-monster hover:bg-monsterDark text-darkBg flex items-center justify-center shadow-[0_0_15px_rgba(57,255,20,0.4)] transition-transform hover:scale-105 active:scale-95">
+                        <i data-lucide="plus" class="w-7 h-7"></i>
+                    </button>
+                </div>
+
+                <button onclick="navigate('drive')" id="nav-drive" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-monster transition-colors w-16">
+                    <i data-lucide="hard-drive" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-medium">Drive</span>
+                </button>
+                <button onclick="navigate('settings')" id="nav-settings" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-monster transition-colors w-16">
+                    <i data-lucide="settings" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-medium">Pengaturan</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Notifikasi Toast -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-monster text-darkBg px-4 py-2 rounded-lg font-semibold shadow-lg shadow-monster/30 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none z-50 flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-msg">Berhasil!</span>
+    </div>
+
+    <!-- Logika Aplikasi (JavaScript) -->
+    <script>
+        // Inisialisasi Ikon
+        lucide.createIcons();
+
+        // --- KONFIGURASI API ---
+        // Ganti URL ini dengan Web App URL dari Google Apps Script Anda nanti
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbynbDyrrPkY6vBkJkryaHItZX1UTsqJQWbHHpHKLRARcVXlSeCf97Xj4wjgdZCL4rrN/exec'; 
+
+        // --- DATA MOCKUP (Simulasi Database sebelum terhubung ke GAS) ---
+        let dataArsip = [
+            { id: 1, nama: 'Laporan_Keuangan_Q1_2026.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan' },
+            { id: 2, nama: 'Presentasi_Proyek_Monster.pptx', tipe: 'ppt', tanggal: '14 Apr 2026', ukuran: '5.1 MB', kategori: 'Proyek' },
+            { id: 3, nama: 'Kontrak_Kerja_Karyawan_Baru.docx', tipe: 'word', tanggal: '10 Apr 2026', ukuran: '1.2 MB', kategori: 'HRD' },
+            { id: 4, nama: 'Data_Inventaris_Gudang.xlsx', tipe: 'excel', tanggal: '05 Apr 2026', ukuran: '800 KB', kategori: 'Logistik' },
+            { id: 5, nama: 'Surat_Edaran_Libur_Lebaran.pdf', tipe: 'pdf', tanggal: '01 Apr 2026', ukuran: '500 KB', kategori: 'Umum' },
+        ];
+
+        // --- RENDERER HALAMAN ---
+        const contentArea = document.getElementById('app-content');
+
+        // 1. Tampilan Dashboard Utama
+        function renderDashboard() {
+            let totalFiles = dataArsip.length;
+            
+            // Hitung dokumen terbaru (3 teratas)
+            let recentFilesHtml = dataArsip.slice(0, 3).map(file => createFileCard(file)).join('');
+
+            contentArea.innerHTML = `
+                <div class="fade-in">
+                    <!-- Kartu Statistik -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden mb-6">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-monster/10 rounded-full blur-xl"></div>
+                        <h2 class="text-slate-300 text-sm font-medium">Total Dokumen Arsip</h2>
+                        <div class="flex items-end gap-3 mt-2">
+                            <span class="text-4xl font-bold text-white">${totalFiles}</span>
+                            <span class="text-monster text-sm font-medium mb-1 flex items-center"><i data-lucide="trending-up" class="w-4 h-4 mr-1"></i> Terhubung ke Drive</span>
+                        </div>
+                    </div>
+
+                    <!-- Kategori Cepat -->
+                    <div class="grid grid-cols-4 md:grid-cols-8 gap-3 mb-8">
+                        ${createCategoryBtn('pdf', 'PDF', 'text-red-400', 'bg-red-400/10')}
+                        ${createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10')}
+                        ${createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10')}
+                        ${createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10')}
+                    </div>
+
+                    <!-- Arsip Terbaru -->
+                    <div class="flex justify-between items-end mb-4">
+                        <h3 class="text-lg font-semibold text-white">Arsip Terbaru</h3>
+                        <button onclick="navigate('search')" class="text-xs text-monster hover:underline">Lihat Semua</button>
+                    </div>
+                    <div class="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
+                        ${recentFilesHtml}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // 2. Tampilan Pencarian (Search/Daftar)
+        function renderSearch() {
+            contentArea.innerHTML = `
+                <div class="fade-in h-full flex flex-col">
+                    <div class="relative mb-6">
+                        <input type="text" id="searchInput" placeholder="Cari nama file, kategori..." 
+                            class="w-full glass-input rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-400"
+                            onkeyup="handleSearch()">
+                        <i data-lucide="search" class="absolute left-4 top-3.5 text-slate-400 w-5 h-5"></i>
+                    </div>
+                    
+                    <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0 overflow-y-auto pb-4">
+                        ${dataArsip.map(file => createFileCard(file)).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+            setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        }
+
+        // 3. Tampilan Form Input Data
+        function renderInput() {
+            contentArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="upload-cloud" class="text-monster"></i> Upload Arsip Baru
+                    </h2>
+                    
+                    <form id="uploadForm" onsubmit="handleUpload(event)" class="space-y-5">
+                        
+                        <!-- Area Drop File -->
+                        <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-colors cursor-pointer relative" id="dropArea">
+                            <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
+                            <i data-lucide="folder-up" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+                            <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file dokumen</p>
+                            <p class="text-xs text-slate-500 mt-1">Mendukung PDF, DOCX, PPTX, XLSX (Max 10MB)</p>
+                        </div>
+
+                        <div class="md:grid md:grid-cols-2 md:gap-4 space-y-5 md:space-y-0">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1 ml-1">Nama Dokumen (Otomatis)</label>
+                                <input type="text" id="docName" readonly placeholder="Terisi otomatis dari file..." class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-slate-400 cursor-not-allowed focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1 ml-1">Kategori (Otomatis)</label>
+                                <input type="text" id="docCategory" readonly placeholder="Terdeteksi otomatis..." class="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl py-3 px-4 text-monster font-semibold cursor-not-allowed focus:outline-none">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(57,255,20,0.3)] mt-4 flex justify-center items-center gap-2 md:w-1/2 md:mx-auto">
+                            <i data-lucide="save" class="w-5 h-5"></i> Simpan ke Drive
+                        </button>
+                    </form>
+                </div>
+            `;
+            lucide.createIcons();
+
+            // Interaksi nama file dan deteksi kategori
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const fullName = file.name;
+                    // Hilangkan ekstensi untuk nama dokumen
+                    const nameWithoutExt = fullName.substring(0, fullName.lastIndexOf('.')) || fullName;
+                    
+                    document.getElementById('fileNameDisplay').innerHTML = `<span class="text-monster font-semibold">${fullName}</span>`;
+                    
+                    // Isi nama dokumen secara otomatis (terkunci)
+                    document.getElementById('docName').value = nameWithoutExt;
+
+                    // Logika deteksi kategori dari nama file
+                    let detectedCategory = 'Umum'; // Default
+                    const lowerName = nameWithoutExt.toLowerCase();
+
+                    if (lowerName.includes('sk') || lowerName.includes('keputusan')) {
+                        detectedCategory = 'SK (Surat Keputusan)';
+                    } else if (lowerName.includes('st') || lowerName.includes('tugas')) {
+                        detectedCategory = 'ST (Surat Tugas)';
+                    } else if (lowerName.includes('laporan') || lowerName.includes('lap')) {
+                        detectedCategory = 'Laporan';
+                    } else if (lowerName.includes('keuangan') || lowerName.includes('uang') || lowerName.includes('invoice')) {
+                        detectedCategory = 'Keuangan';
+                    } else if (lowerName.includes('hrd') || lowerName.includes('pegawai') || lowerName.includes('kontrak')) {
+                        detectedCategory = 'Kepegawaian';
+                    } else if (lowerName.includes('undangan')) {
+                        detectedCategory = 'Undangan';
+                    }
+
+                    // Isi kategori secara otomatis (terkunci)
+                    document.getElementById('docCategory').value = detectedCategory;
+                }
+            });
+        }
+
+        function renderPlaceholder(title) {
+            contentArea.innerHTML = `
+                <div class="fade-in h-full flex flex-col items-center justify-center text-center opacity-50">
+                    <i data-lucide="construction" class="w-16 h-16 text-slate-500 mb-4"></i>
+                    <h2 class="text-lg font-bold text-white">Modul ${title}</h2>
+                    <p class="text-sm text-slate-400">Dalam tahap pengembangan</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- FUNGSI PENDUKUNG ---
+
+        // Membuat HTML Card File
+        function createFileCard(file) {
+            // Tentukan icon & warna berdasarkan tipe file
+            let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700';
+            if(file.tipe === 'pdf') { icon = 'file-text'; color = 'text-red-400'; bg = 'bg-red-400/10'; }
+            else if(file.tipe === 'word') { icon = 'file-text'; color = 'text-blue-400'; bg = 'bg-blue-400/10'; }
+            else if(file.tipe === 'excel') { icon = 'table'; color = 'text-green-400'; bg = 'bg-green-400/10'; }
+            else if(file.tipe === 'ppt') { icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-400/10'; }
+
+            return `
+                <div class="glass p-3.5 rounded-2xl flex items-center justify-between hover:border-monster/50 transition-colors cursor-pointer group">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0">
+                            <i data-lucide="${icon}" class="w-5 h-5"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="font-semibold text-sm text-white truncate group-hover:text-monster transition-colors">${file.nama}</h3>
+                            <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                                <span>${file.tanggal}</span>
+                                <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span>${file.ukuran}</span>
+                                <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                                <span class="text-monster/80 border border-monster/30 px-1.5 rounded-md">${file.kategori}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="text-slate-500 hover:text-white p-2">
+                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function createCategoryBtn(icon, label, colorClass, bgClass) {
+            return `
+                <button class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-colors">
+                    <div class="${bgClass} ${colorClass} p-2 rounded-xl mb-2">
+                        <i data-lucide="${icon}" class="w-5 h-5"></i>
+                    </div>
+                    <span class="text-[10px] font-medium text-slate-300">${label}</span>
+                </button>
+            `;
+        }
+
+        // Logika Pencarian Real-time
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            const filtered = dataArsip.filter(file => 
+                file.nama.toLowerCase().includes(query) || 
+                file.kategori.toLowerCase().includes(query)
+            );
+
+            if(filtered.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-10 opacity-50">
+                        <i data-lucide="file-search" class="w-12 h-12 text-slate-500 mx-auto mb-3"></i>
+                        <p class="text-sm text-slate-400">Arsip tidak ditemukan</p>
+                    </div>`;
+            } else {
+                resultsContainer.innerHTML = filtered.map(file => createFileCard(file)).join('');
+            }
+            lucide.createIcons();
+        }
+
+        // Simulasi Upload & Simpan Data
+        function handleUpload(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const fileInput = document.getElementById('fileInput');
+            const docName = document.getElementById('docName').value;
+            const docCategory = document.getElementById('docCategory').value;
+
+            if(fileInput.files.length === 0) {
+                alert("Pilih file terlebih dahulu!");
+                return;
+            }
+
+            // UI Loading state
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Mengunggah...`;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            lucide.createIcons();
+
+            /* * DI SINI TEMPAT API GOOGLE APPS SCRIPT ANDA BEKERJA
+             * Contoh logika FETCH (di-comment karena butuh endpoint asli):
+             *
+             * const formData = new FormData();
+             * formData.append('file', fileInput.files[0]);
+             * formData.append('nama', docName);
+             * * fetch(GAS_API_URL, { method: 'POST', body: formData })
+             * .then(res => res.json())
+             * .then(res => { sukses(); })
+             */
+
+            // Simulasi proses delay jaringan (2 detik)
+            setTimeout(() => {
+                // Tambah data ke mockup array
+                const newFile = {
+                    id: Date.now(),
+                    nama: docName,
+                    tipe: fileInput.files[0].name.split('.').pop().toLowerCase(),
+                    tanggal: 'Hari ini',
+                    ukuran: (fileInput.files[0].size / 1024 / 1024).toFixed(1) + ' MB',
+                    kategori: docCategory
+                };
+                dataArsip.unshift(newFile); // Taruh di paling atas
+
+                showToast('Arsip berhasil disimpan ke Drive!');
+                navigate('dashboard'); // Kembali ke depan
+            }, 2000);
+        }
+
+        // Sistem Navigasi & Active State
+        function navigate(view) {
+            // Update Active Menu
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-monster');
+                btn.classList.add('text-slate-400');
+            });
+            
+            const activeBtn = document.getElementById(`nav-${view}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-monster');
+            }
+
+            // Render view
+            if(view === 'dashboard') renderDashboard();
+            else if(view === 'search') renderSearch();
+            else if(view === 'input') renderInput();
+            else renderPlaceholder(view.charAt(0).toUpperCase() + view.slice(1));
+        }
+
+        // Sistem Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        // Inisialisasi awal
+        window.onload = () => {
+            navigate('dashboard');
+        };
+
+    </script>
+</body>
+</html>
