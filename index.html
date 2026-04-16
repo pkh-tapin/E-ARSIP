@@ -154,21 +154,26 @@
         // --- FUNGSI MENGAMBIL DATA DARI GAS ---
         async function fetchData() {
             isLoading = true;
-            renderDashboard(); // Render dengan status loading
+            // Hanya render ulang dashboard jika sedang di halaman dashboard
+            if(document.getElementById('nav-dashboard').classList.contains('text-monster')) {
+                renderDashboard(); 
+            }
             
             try {
                 // Cek jika URL belum diganti (masih bawaan template)
                 if(GAS_API_URL.includes('AKfycb...')) {
                     console.warn("Menggunakan data Mockup karena URL API belum diganti.");
                     dataArsip = [
-                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan' }
+                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'Keuangan', url: '#' },
+                        { id: 2, nama: 'Data_Pegawai.xlsx', tipe: 'xlsx', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'Kepegawaian', url: '#' }
                     ];
                 } else {
                     const response = await fetch(GAS_API_URL);
                     const result = await response.json();
                     
                     if(Array.isArray(result)) {
-                        dataArsip = result; // Data berhasil dibaca dari Drive!
+                        // Urutkan data berdasarkan tanggal terbaru jika memungkinkan
+                        dataArsip = result.reverse(); 
                     } else if(result.error) {
                         showToast("Error dari Drive: " + result.error);
                     }
@@ -178,7 +183,14 @@
                 showToast("Gagal terhubung ke Database Google Drive.");
             } finally {
                 isLoading = false;
-                navigate('dashboard'); // Perbarui tampilan setelah data masuk
+                // Render ulang halaman aktif setelah data berhasil dimuat
+                const activeNav = document.querySelector('.nav-btn.text-monster');
+                if(activeNav) {
+                    const view = activeNav.id.replace('nav-', '');
+                    navigate(view);
+                } else {
+                    navigate('dashboard');
+                }
             }
         }
 
@@ -194,7 +206,7 @@
             if (isLoading) {
                 recentFilesHtml = `<div class="col-span-full text-center py-6 text-slate-400"><i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2 text-monster"></i> Membaca dari Google Drive...</div>`;
             } else if (totalFiles === 0) {
-                recentFilesHtml = `<div class="col-span-full text-center py-6 text-slate-400">Belum ada dokumen.</div>`;
+                recentFilesHtml = `<div class="col-span-full text-center py-6 text-slate-400">Belum ada dokumen di Drive.</div>`;
             } else {
                 recentFilesHtml = dataArsip.slice(0, 3).map(file => createFileCard(file)).join('');
             }
@@ -234,6 +246,13 @@
 
         // 2. Tampilan Pencarian (Search/Daftar)
         function renderSearch() {
+            let filesHtml = '';
+            if (isLoading) {
+                filesHtml = `<div class="col-span-full text-center py-6 text-slate-400"><i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2 text-monster"></i> Memuat data...</div>`;
+            } else {
+                filesHtml = dataArsip.map(file => createFileCard(file)).join('');
+            }
+
             contentArea.innerHTML = `
                 <div class="fade-in h-full flex flex-col">
                     <div class="relative mb-6">
@@ -244,12 +263,12 @@
                     </div>
                     
                     <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0 overflow-y-auto pb-4">
-                        ${dataArsip.map(file => createFileCard(file)).join('')}
+                        ${filesHtml}
                     </div>
                 </div>
             `;
             lucide.createIcons();
-            setTimeout(() => document.getElementById('searchInput').focus(), 100);
+            setTimeout(() => document.getElementById('searchInput')?.focus(), 100);
         }
 
         // 3. Tampilan Form Input Data
@@ -264,10 +283,10 @@
                         
                         <!-- Area Drop File -->
                         <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-colors cursor-pointer relative" id="dropArea">
-                            <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" required>
+                            <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" required>
                             <i data-lucide="folder-up" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
                             <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file dokumen</p>
-                            <p class="text-xs text-slate-500 mt-1">Mendukung PDF, DOCX, PPTX, XLSX (Max 10MB)</p>
+                            <p class="text-xs text-slate-500 mt-1">Mendukung PDF, DOCX, PPTX, XLSX, JPG (Max 10MB)</p>
                         </div>
 
                         <div class="md:grid md:grid-cols-2 md:gap-4 space-y-5 md:space-y-0">
@@ -327,6 +346,95 @@
             });
         }
 
+        // 4. Tampilan Drive (Folder View)
+        function renderDrive() {
+            let filesHtml = '';
+            if (isLoading) {
+                filesHtml = `<div class="col-span-full text-center py-6 text-slate-400"><i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2 text-monster"></i> Memuat isi Drive...</div>`;
+            } else if (dataArsip.length === 0) {
+                filesHtml = `<div class="col-span-full text-center py-6 text-slate-400">Drive masih kosong.</div>`;
+            } else {
+                filesHtml = dataArsip.map(file => createFileCard(file)).join('');
+            }
+
+            contentArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="hard-drive" class="text-monster"></i> Penyimpanan Drive
+                    </h2>
+                    <div class="bg-slate-800/50 p-4 rounded-xl mb-6 border border-slate-700 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-monster/10 rounded-lg"><i data-lucide="folder" class="w-5 h-5 text-monster"></i></div>
+                            <div>
+                                <p class="text-sm text-white font-medium">Database E-Arsip</p>
+                                <p class="text-xs text-slate-400">${dataArsip.length} Dokumen Tersimpan</p>
+                            </div>
+                        </div>
+                        <button onclick="fetchData()" class="p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-700">
+                            <i data-lucide="refresh-cw" class="w-5 h-5 ${isLoading ? 'animate-spin text-monster' : ''}"></i>
+                        </button>
+                    </div>
+                    
+                    <h3 class="text-sm font-semibold text-slate-300 mb-3">Semua File</h3>
+                    <div class="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0 pb-4">
+                        ${filesHtml}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // 5. Tampilan Pengaturan
+        function renderSettings() {
+            const isConnected = !GAS_API_URL.includes('AKfycb...');
+            
+            contentArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="settings" class="text-monster"></i> Pengaturan Sistem
+                    </h2>
+                    
+                    <div class="glass p-5 rounded-2xl space-y-5">
+                        <!-- Status Koneksi -->
+                        <div>
+                            <h3 class="text-sm font-medium text-slate-300 mb-2">Status Koneksi API</h3>
+                            <div class="flex items-center gap-3 p-3 rounded-xl border ${isConnected ? 'bg-monster/10 border-monster/30' : 'bg-red-500/10 border-red-500/30'}">
+                                <i data-lucide="${isConnected ? 'check-circle' : 'alert-circle'}" class="w-6 h-6 ${isConnected ? 'text-monster' : 'text-red-400'}"></i>
+                                <div>
+                                    <p class="text-sm font-semibold ${isConnected ? 'text-monster' : 'text-red-400'}">
+                                        ${isConnected ? 'Terhubung ke Google Drive' : 'Belum Terhubung'}
+                                    </p>
+                                    <p class="text-[10px] text-slate-400">
+                                        ${isConnected ? 'Sistem dapat membaca dan menyimpan file.' : 'Harap ganti GAS_API_URL di dalam kode index.html.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Aplikasi -->
+                        <div class="border-t border-slate-700/50 pt-4">
+                            <h3 class="text-sm font-medium text-slate-300 mb-3">Informasi Aplikasi</h3>
+                            <div class="space-y-2 text-xs text-slate-400">
+                                <div class="flex justify-between border-b border-slate-800 pb-2">
+                                    <span>Versi</span>
+                                    <span class="text-white">v1.2 (Monster Edition)</span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-800 pb-2">
+                                    <span>Penyimpanan</span>
+                                    <span class="text-white">Google Drive via GAS</span>
+                                </div>
+                                <div class="flex justify-between pb-2">
+                                    <span>Frontend</span>
+                                    <span class="text-white">Vercel & Tailwind CSS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
         function renderPlaceholder(title) {
             contentArea.innerHTML = `
                 <div class="fade-in h-full flex flex-col items-center justify-center text-center opacity-50">
@@ -340,34 +448,52 @@
 
         // --- FUNGSI PENDUKUNG ---
 
-        // Membuat HTML Card File
+        // Membuat HTML Card File (Klik untuk membuka/download file)
         function createFileCard(file) {
-            // Tentukan icon & warna berdasarkan tipe file
-            let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700';
-            if(file.tipe === 'pdf') { icon = 'file-text'; color = 'text-red-400'; bg = 'bg-red-400/10'; }
-            else if(file.tipe === 'word') { icon = 'file-text'; color = 'text-blue-400'; bg = 'bg-blue-400/10'; }
-            else if(file.tipe === 'excel') { icon = 'table'; color = 'text-green-400'; bg = 'bg-green-400/10'; }
-            else if(file.tipe === 'ppt') { icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-400/10'; }
+            let icon = 'file'; 
+            let color = 'text-slate-400'; 
+            let bg = 'bg-slate-700';
+            
+            // Konversi ekstensi ke lowercase untuk pengecekan
+            const tipe = file.tipe ? file.tipe.toLowerCase() : '';
 
+            // Deteksi Ekstensi & Ikon Secara Akurat
+            if(tipe === 'pdf') { 
+                icon = 'file-text'; color = 'text-red-400'; bg = 'bg-red-400/10'; 
+            }
+            else if(['doc', 'docx'].includes(tipe)) { 
+                icon = 'file-text'; color = 'text-blue-400'; bg = 'bg-blue-400/10'; 
+            }
+            else if(['xls', 'xlsx', 'csv'].includes(tipe)) { 
+                icon = 'table'; color = 'text-green-400'; bg = 'bg-green-400/10'; 
+            }
+            else if(['ppt', 'pptx'].includes(tipe)) { 
+                icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-400/10'; 
+            }
+            else if(['jpg', 'jpeg', 'png'].includes(tipe)) { 
+                icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; 
+            }
+
+            // Fungsi onclick ditambahkan di div terluar agar seluruh card dapat diklik
             return `
-                <div class="glass p-3.5 rounded-2xl flex items-center justify-between hover:border-monster/50 transition-colors cursor-pointer group">
+                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-center justify-between border border-transparent hover:border-monster/50 transition-all cursor-pointer group shadow-sm hover:shadow-monster/20">
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0">
+                        <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform">
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
                         <div class="min-w-0">
                             <h3 class="font-semibold text-sm text-white truncate group-hover:text-monster transition-colors">${file.nama}</h3>
                             <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                                <span>${file.tanggal}</span>
+                                <span>${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span>${file.ukuran}</span>
+                                <span>${file.ukuran || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="text-monster/80 border border-monster/30 px-1.5 rounded-md">${file.kategori}</span>
+                                <span class="text-monster/80 border border-monster/30 px-1.5 rounded-md">${file.kategori || 'Umum'}</span>
                             </div>
                         </div>
                     </div>
-                    <button class="text-slate-500 hover:text-white p-2">
-                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    <button class="text-slate-500 hover:text-monster p-2 shrink-0">
+                        <i data-lucide="download" class="w-4 h-4"></i>
                     </button>
                 </div>
             `;
@@ -375,7 +501,7 @@
 
         function createCategoryBtn(icon, label, colorClass, bgClass) {
             return `
-                <button class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-colors">
+                <button class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-colors hover:shadow-[0_0_10px_rgba(57,255,20,0.2)]">
                     <div class="${bgClass} ${colorClass} p-2 rounded-xl mb-2">
                         <i data-lucide="${icon}" class="w-5 h-5"></i>
                     </div>
@@ -391,14 +517,15 @@
             
             const filtered = dataArsip.filter(file => 
                 file.nama.toLowerCase().includes(query) || 
-                (file.kategori && file.kategori.toLowerCase().includes(query))
+                (file.kategori && file.kategori.toLowerCase().includes(query)) ||
+                (file.tipe && file.tipe.toLowerCase().includes(query))
             );
 
             if(filtered.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="col-span-full text-center py-10 opacity-50">
                         <i data-lucide="file-search" class="w-12 h-12 text-slate-500 mx-auto mb-3"></i>
-                        <p class="text-sm text-slate-400">Arsip tidak ditemukan</p>
+                        <p class="text-sm text-slate-400">Pencarian "${query}" tidak ditemukan</p>
                     </div>`;
             } else {
                 resultsContainer.innerHTML = filtered.map(file => createFileCard(file)).join('');
@@ -447,12 +574,23 @@
 
                 fetch(GAS_API_URL, {
                     method: 'POST',
+                    // Menambahkan headers Content-Type text/plain agar tidak terkena error CORS preflight
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
                     body: JSON.stringify(payload)
                 })
                 .then(res => res.json())
                 .then(res => {
                     if(res.status === 'success') {
                         showToast('File berhasil terkirim ke Google Drive!');
+                        // Reset input form
+                        fileInput.value = '';
+                        document.getElementById('docName').value = '';
+                        document.getElementById('docCategory').value = '';
+                        document.getElementById('fileNameDisplay').innerText = 'Ketuk untuk memilih file dokumen';
+                        
+                        resetBtn();
                         fetchData(); // Refresh data dari drive setelah upload sukses
                     } else {
                         alert("Gagal mengunggah: " + (res.message || "Unknown Error"));
@@ -491,10 +629,12 @@
                 activeBtn.classList.add('text-monster');
             }
 
-            // Render view
+            // Render view berdasarkan pilihan menu
             if(view === 'dashboard') renderDashboard();
             else if(view === 'search') renderSearch();
             else if(view === 'input') renderInput();
+            else if(view === 'drive') renderDrive();
+            else if(view === 'settings') renderSettings();
             else renderPlaceholder(view.charAt(0).toUpperCase() + view.slice(1));
         }
 
