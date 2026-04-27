@@ -181,7 +181,8 @@
                     // Delay simulasi untuk memperlihatkan animasi skeleton yang elegan
                     await new Promise(resolve => setTimeout(resolve, 1500)); 
                     dataArsip = [
-                        { id: 1, nama: 'Tautan_Database_Warga_2026.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
+                        // Mockup dengan format link yang terenkripsi di nama file
+                        { id: 1, nama: 'Tautan_Database_Warga_2026___LINK___https%3A%2F%2Fdocs.google.com%2Fspreadsheets.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
                         { id: 2, nama: 'SK_Pegawai.pdf', tipe: 'pdf', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
                     ];
                 } else {
@@ -476,6 +477,7 @@
         // 5. Tampilan Pengaturan
         function renderSettings() {
             const isConnected = !GAS_API_URL.includes('AKfycb...');
+            const savedDriveUrl = localStorage.getItem('driveFolderUrl') || '';
             
             contentArea.innerHTML = `
                 <div class="fade-in pt-2">
@@ -502,13 +504,30 @@
                             </div>
                         </div>
 
+                        <!-- Link Folder Drive Shareable -->
+                        <div class="border-t border-slate-700/50 pt-5">
+                            <h3 class="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Akses Folder Google Drive</h3>
+                            <div class="space-y-3">
+                                <p class="text-[10px] text-slate-400">Masukkan link folder Drive Anda di sini untuk mempermudah akses dan membagikannya ke rekan kerja.</p>
+                                <div class="flex gap-2">
+                                    <input type="url" id="driveFolderLink" value="${savedDriveUrl}" placeholder="https://drive.google.com/drive/folders/..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none focus:border-monster/50" onchange="saveDriveLink(this.value)">
+                                    <button onclick="openDriveLink()" class="p-2.5 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-colors shrink-0" title="Buka Folder di Tab Baru">
+                                        <i data-lucide="external-link" class="w-5 h-5"></i>
+                                    </button>
+                                    <button onclick="shareDriveLink()" class="p-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl hover:bg-blue-500/20 transition-colors shrink-0" title="Bagikan / Salin Link">
+                                        <i data-lucide="share-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Info Aplikasi -->
                         <div class="border-t border-slate-700/50 pt-5">
                             <h3 class="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Informasi Teknis</h3>
                             <div class="space-y-3 text-xs text-slate-300">
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="tag" class="w-4 h-4 text-slate-500"></i> Versi Aplikasi</span>
-                                    <span class="font-bold text-white">v3.0 (Blueprint)</span>
+                                    <span class="font-bold text-white">v3.5 (Blueprint Final)</span>
                                 </div>
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4 text-slate-500"></i> Basis Data</span>
@@ -525,6 +544,32 @@
             `;
             lucide.createIcons();
         }
+
+        // Fungsi khusus Share & Open Drive Folder (Sistem Settings)
+        window.saveDriveLink = function(url) {
+            localStorage.setItem('driveFolderUrl', url);
+            showToast('Link Folder Drive tersimpan di perangkat!');
+        };
+        window.openDriveLink = function() {
+            const url = localStorage.getItem('driveFolderUrl') || document.getElementById('driveFolderLink').value;
+            if(url) window.open(url, '_blank');
+            else alert('Harap masukkan link folder Google Drive Anda terlebih dahulu pada kolom yang tersedia.');
+        };
+        window.shareDriveLink = function() {
+            const url = localStorage.getItem('driveFolderUrl') || document.getElementById('driveFolderLink').value;
+            if(!url) return alert('Harap masukkan link folder Google Drive Anda terlebih dahulu.');
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Database E-Arsip Pro',
+                    text: 'Berikut adalah tautan untuk mengakses folder Database E-Arsip:',
+                    url: url
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(url);
+                showToast('Tautan berhasil disalin ke Papan Klip!');
+            }
+        };
 
         // --- FUNGSI PENDUKUNG ---
 
@@ -566,11 +611,26 @@
             else if(['jpg', 'jpeg', 'png'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
             else if(['html', 'url', 'link'].includes(tipe)) { icon = 'link'; color = 'text-cyan-400'; bg = 'bg-cyan-400/10'; }
 
-            // Menghilangkan akhiran ekstensi di tampilan kartu .html jika itu link url
-            const displayName = tipe === 'html' ? file.nama.replace('.html', '') : file.nama;
+            let displayName = file.nama;
+            let targetUrl = file.url;
+
+            // Logika Dekripsi Tautan Tersembunyi (Langsung Buka Tautan Asli)
+            if (tipe === 'html' && file.nama.includes('___LINK___')) {
+                const parts = file.nama.split('___LINK___');
+                displayName = parts[0];
+                const encodedUrl = parts[1].replace('.html', '');
+                try {
+                    targetUrl = decodeURIComponent(encodedUrl);
+                } catch(e) {
+                    targetUrl = file.url;
+                }
+            } else if (tipe === 'html') {
+                // Menghilangkan akhiran ekstensi di tampilan kartu .html
+                displayName = displayName.replace('.html', '');
+            }
 
             return `
-                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
+                <div onclick="window.open('${targetUrl}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
                     <div class="flex items-start gap-3.5 overflow-hidden w-full">
                         <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
@@ -691,7 +751,7 @@
                 };
                 reader.readAsDataURL(file);
             } 
-            // Logika cerdas untuk upload TAUTAN LINK (Menyulap link jadi File Web HTML)
+            // Logika cerdas untuk upload TAUTAN LINK (Menyulap link jadi File Web HTML + Enkripsi Target)
             else {
                 const urlInput = document.getElementById('linkUrl').value;
                 const linkName = document.getElementById('linkName').value;
@@ -702,14 +762,13 @@
                     return alert("Lengkapi URL dan Judul Dokumen Tautan!");
                 }
 
-                // Kita buat file HTML sederhana yang ketika diklik akan langsung redirect ke Spreadsheet/Link tersebut
                 const htmlContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${urlInput}"></head><body style="background:#0b1121; color:#fff; font-family:sans-serif; text-align:center; padding-top:50px;"><h2>Mengalihkan ke Dokumen...</h2><p>Jika tidak dialihkan otomatis, <a href="${urlInput}" style="color:#39FF14;">klik di sini</a></p></body></html>`;
-                
-                // Konversi string HTML ke format base64
                 const base64Data = btoa(unescape(encodeURIComponent(htmlContent)));
 
+                // Enkripsi target url ke dalam nama file agar frontend dapat mengekstraknya tanpa merubah backend
+                const safeUrl = encodeURIComponent(urlInput);
                 payload = {
-                    fileName: `${linkName}.html`, // Disimpan di Google Drive dengan ekstensi HTML
+                    fileName: `${linkName}___LINK___${safeUrl}.html`,
                     mimeType: 'text/html',
                     fileData: base64Data,
                     category: linkCategory
