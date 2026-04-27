@@ -164,6 +164,7 @@
         // --- DATA STATE ---
         let dataArsip = [];
         let isLoading = true;
+        window.activeUploadMode = 'file'; // Tab default untuk halaman input
 
         // --- FUNGSI MENGAMBIL DATA DARI GAS ---
         async function fetchData() {
@@ -180,8 +181,8 @@
                     // Delay simulasi untuk memperlihatkan animasi skeleton yang elegan
                     await new Promise(resolve => setTimeout(resolve, 1500)); 
                     dataArsip = [
-                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek_Sangat_Panjang_Sekali_Tahun_2026_Final.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'DATA', url: '#' },
-                        { id: 2, nama: 'SK_Pegawai.xlsx', tipe: 'xlsx', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
+                        { id: 1, nama: 'Link_Laporan_Data_Penduduk_Google_Sheets.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
+                        { id: 2, nama: 'SK_Pegawai.pdf', tipe: 'pdf', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
                     ];
                 } else {
                     const response = await fetch(GAS_API_URL);
@@ -241,12 +242,12 @@
                         </div>
                     </div>
 
-                    <!-- Kategori Cepat -->
+                    <!-- Kategori Cepat (Dengan Filter Aktif) -->
                     <div class="grid grid-cols-4 md:grid-cols-8 gap-3 mb-8">
-                        ${createCategoryBtn('pdf', 'PDF', 'text-red-400', 'bg-red-400/10')}
-                        ${createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10')}
-                        ${createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10')}
-                        ${createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10')}
+                        ${createCategoryBtn('pdf', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
+                        ${createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
+                        ${createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10', 'ppt')}
+                        ${createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10', 'xls')}
                     </div>
 
                     <!-- Arsip Terbaru -->
@@ -289,47 +290,85 @@
             if(!isLoading) setTimeout(() => document.getElementById('searchInput')?.focus(), 100);
         }
 
-        // 3. Tampilan Form Input Data
+        // 3. Tampilan Form Input Data (File Fisik & Tautan Link)
         function renderInput() {
+            window.activeUploadMode = 'file'; // Reset ke default tiap render
+            
             contentArea.innerHTML = `
                 <div class="fade-in pt-2">
                     <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Form Upload Arsip
+                        <i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Form Input Arsip
                     </h2>
+
+                    <!-- Toggle Tabs Fisik vs Tautan -->
+                    <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl w-full border border-slate-700/50 relative z-10">
+                        <button type="button" onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg transition-all shadow-sm">File Fisik</button>
+                        <button type="button" onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all">Tautan / Link</button>
+                    </div>
                     
                     <form id="uploadForm" onsubmit="handleUpload(event)" class="space-y-5">
                         
-                        <!-- Area Drop File -->
-                        <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group" id="dropArea">
-                            <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" required>
-                            <div class="bg-slate-800 p-3 rounded-full w-max mx-auto mb-3 group-hover:scale-110 transition-transform group-hover:bg-monster/20">
-                                <i data-lucide="folder-up" class="w-8 h-8 text-slate-400 group-hover:text-monster"></i>
+                        <!-- TAB 1: AREA DROP FILE (FILE FISIK) -->
+                        <div id="mode-file" class="space-y-5 fade-in">
+                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group" id="dropArea">
+                                <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" required>
+                                <div class="bg-slate-800 p-3 rounded-full w-max mx-auto mb-3 group-hover:scale-110 transition-transform group-hover:bg-monster/20">
+                                    <i data-lucide="folder-up" class="w-8 h-8 text-slate-400 group-hover:text-monster"></i>
+                                </div>
+                                <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file dokumen</p>
+                                <p class="text-[10px] text-slate-500 mt-2">Format: PDF, Word, Excel, PPT, JPG (Max 10MB)</p>
                             </div>
-                            <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file dokumen</p>
-                            <p class="text-[10px] text-slate-500 mt-2">Format: PDF, Word, Excel, PPT, JPG (Max 10MB)</p>
+
+                            <div class="md:grid md:grid-cols-2 md:gap-4 space-y-5 md:space-y-0">
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Nama Dokumen (Otomatis)</label>
+                                    <input type="text" id="docName" readonly placeholder="Terisi otomatis..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-slate-400 cursor-not-allowed focus:outline-none">
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Kategori (Auto / Manual)</label>
+                                    <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-monster font-semibold focus:outline-none focus:border-monster/50 transition-colors cursor-pointer">
+                                        <option value="FILE">FILE</option>
+                                        <option value="SURAT MASUK">SURAT MASUK</option>
+                                        <option value="SURAT KELUAR">SURAT KELUAR</option>
+                                        <option value="PEMBERITAHUAN">PEMBERITAHUAN</option>
+                                        <option value="SK">SK</option>
+                                        <option value="DATA">DATA</option>
+                                        <option value="LAINYA">LAINYA</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="md:grid md:grid-cols-2 md:gap-4 space-y-5 md:space-y-0">
+                        <!-- TAB 2: AREA INPUT TAUTAN LINK SPREADSHEET DLL -->
+                        <div id="mode-link" class="hidden space-y-5 fade-in">
                             <div>
-                                <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Nama Dokumen (Otomatis)</label>
-                                <input type="text" id="docName" readonly placeholder="Terisi otomatis..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-slate-400 cursor-not-allowed focus:outline-none">
+                                <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">URL Tautan (Spreadsheet, G-Drive, Web)</label>
+                                <input type="url" id="linkUrl" placeholder="https://docs.google.com/..." class="w-full glass-input rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none" oninput="autoDetectLink(this.value)">
                             </div>
+                            
+                            <div class="md:grid md:grid-cols-2 md:gap-4 space-y-5 md:space-y-0">
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Judul Dokumen Link</label>
+                                    <input type="text" id="linkName" placeholder="Contoh: Laporan Data Warga..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:border-monster/50 transition-colors">
+                                </div>
 
-                            <div>
-                                <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Kategori (Auto / Manual)</label>
-                                <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-monster font-semibold focus:outline-none focus:border-monster/50 transition-colors cursor-pointer">
-                                    <option value="FILE">FILE</option>
-                                    <option value="SURAT MASUK">SURAT MASUK</option>
-                                    <option value="SURAT KELUAR">SURAT KELUAR</option>
-                                    <option value="PEMBERITAHUAN">PEMBERITAHUAN</option>
-                                    <option value="SK">SK</option>
-                                    <option value="DATA">DATA</option>
-                                    <option value="LAINYA">LAINYA</option>
-                                </select>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1.5 ml-1 font-medium">Kategori Link</label>
+                                    <select id="linkCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-sm text-monster font-semibold focus:outline-none focus:border-monster/50 transition-colors cursor-pointer">
+                                        <option value="DATA">DATA</option>
+                                        <option value="FILE">FILE</option>
+                                        <option value="SURAT MASUK">SURAT MASUK</option>
+                                        <option value="SURAT KELUAR">SURAT KELUAR</option>
+                                        <option value="PEMBERITAHUAN">PEMBERITAHUAN</option>
+                                        <option value="SK">SK</option>
+                                        <option value="LAINYA">LAINYA</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.25)] mt-4 flex justify-center items-center gap-2 md:w-1/2 md:mx-auto">
+                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(57,255,20,0.25)] mt-6 flex justify-center items-center gap-2 md:w-1/2 md:mx-auto">
                             <i data-lucide="hard-drive-upload" class="w-5 h-5"></i> Simpan ke Database
                         </button>
                     </form>
@@ -337,21 +376,51 @@
             `;
             lucide.createIcons();
 
-            // Interaksi nama file dan deteksi kategori
+            // Interaksi tab switcher (Definisi fungsi)
+            window.switchUploadMode = function(mode) {
+                window.activeUploadMode = mode;
+                const isFile = mode === 'file';
+                
+                document.getElementById('tab-file').className = isFile 
+                    ? "flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg transition-all shadow-sm"
+                    : "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+                    
+                document.getElementById('tab-link').className = !isFile 
+                    ? "flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg transition-all shadow-sm"
+                    : "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+
+                document.getElementById('mode-file').classList.toggle('hidden', !isFile);
+                document.getElementById('mode-link').classList.toggle('hidden', isFile);
+
+                document.getElementById('fileInput').required = isFile;
+                document.getElementById('linkUrl').required = !isFile;
+                document.getElementById('linkName').required = !isFile;
+            };
+
+            // Deteksi Kategori Tautan Otomatis
+            window.autoDetectLink = function(url) {
+                const lowerUrl = url.toLowerCase();
+                let cat = 'DATA';
+                if(lowerUrl.includes('spreadsheets') || lowerUrl.includes('excel')) cat = 'DATA';
+                else if(lowerUrl.includes('document') || lowerUrl.includes('word')) cat = 'FILE';
+                else if(lowerUrl.includes('presentation') || lowerUrl.includes('slide')) cat = 'FILE';
+                else if(lowerUrl.includes('drive.google.com')) cat = 'FILE';
+                document.getElementById('linkCategory').value = cat;
+            };
+
+            // Interaksi nama file fisik
             document.getElementById('fileInput').addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if(file) {
                     const fullName = file.name;
                     const nameWithoutExt = fullName.substring(0, fullName.lastIndexOf('.')) || fullName;
                     
-                    // break-words memastikan nama file panjang akan berlipat ke bawah, tidak terpotong
                     document.getElementById('fileNameDisplay').innerHTML = `<span class="text-monster font-semibold break-words leading-tight block px-4">${fullName}</span>`;
                     document.getElementById('docName').value = nameWithoutExt;
 
-                    let detectedCategory = 'FILE'; // Kategori Default
+                    let detectedCategory = 'FILE';
                     const lowerName = nameWithoutExt.toLowerCase();
 
-                    // Logika pendeteksian otomatis berdasarkan daftar opsi baru
                     if (lowerName.includes('sk') || lowerName.includes('keputusan')) detectedCategory = 'SK';
                     else if (lowerName.includes('masuk')) detectedCategory = 'SURAT MASUK';
                     else if (lowerName.includes('keluar')) detectedCategory = 'SURAT KELUAR';
@@ -438,7 +507,7 @@
                             <div class="space-y-3 text-xs text-slate-300">
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="tag" class="w-4 h-4 text-slate-500"></i> Versi Aplikasi</span>
-                                    <span class="font-bold text-white">v2.0 (Blueprint)</span>
+                                    <span class="font-bold text-white">v3.0 (Blueprint)</span>
                                 </div>
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4 text-slate-500"></i> Basis Data</span>
@@ -488,11 +557,16 @@
             
             const tipe = file.tipe ? file.tipe.toLowerCase() : '';
 
+            // Penyesuaian ikon termasuk ikon Link URL khusus HTML Spreadsheet dsb.
             if(tipe === 'pdf') { icon = 'file-text'; color = 'text-red-400'; bg = 'bg-red-400/10'; }
             else if(['doc', 'docx'].includes(tipe)) { icon = 'file-text'; color = 'text-blue-400'; bg = 'bg-blue-400/10'; }
             else if(['xls', 'xlsx', 'csv'].includes(tipe)) { icon = 'table'; color = 'text-green-400'; bg = 'bg-green-400/10'; }
             else if(['ppt', 'pptx'].includes(tipe)) { icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-400/10'; }
             else if(['jpg', 'jpeg', 'png'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
+            else if(['html', 'url', 'link'].includes(tipe)) { icon = 'link'; color = 'text-cyan-400'; bg = 'bg-cyan-400/10'; }
+
+            // Menghilangkan akhiran ekstensi di tampilan kartu .html jika itu link url
+            const displayName = tipe === 'html' ? file.nama.replace('.html', '') : file.nama;
 
             return `
                 <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
@@ -501,27 +575,27 @@
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
                         <div class="min-w-0 flex-1">
-                            <!-- break-words memastikan tidak ada pemotongan nama file, melipat secara presisi -->
-                            <h3 class="font-bold text-sm text-slate-100 break-words leading-snug group-hover:text-monster transition-colors">${file.nama}</h3>
+                            <h3 class="font-bold text-sm text-slate-100 break-words leading-snug group-hover:text-monster transition-colors">${displayName}</h3>
                             <div class="flex items-center flex-wrap gap-2 mt-1.5 text-[9px] text-slate-400 font-medium">
                                 <span class="whitespace-nowrap">${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="whitespace-nowrap">${file.ukuran || '-'}</span>
+                                <span class="whitespace-nowrap">${tipe === 'html' ? 'Tautan Eksternal' : (file.ukuran || '-')}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md whitespace-nowrap">${file.kategori || 'FILE'}</span>
                             </div>
                         </div>
                     </div>
                     <div class="text-slate-500 group-hover:text-monster group-hover:bg-monster/10 p-2 rounded-lg shrink-0 ml-2 transition-colors">
-                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <i data-lucide="${tipe === 'html' ? 'external-link' : 'download'}" class="w-4 h-4"></i>
                     </div>
                 </div>
             `;
         }
 
-        function createCategoryBtn(icon, label, colorClass, bgClass) {
+        // Tombol Filter Kategori di Dashboard
+        function createCategoryBtn(icon, label, colorClass, bgClass, filterCode) {
             return `
-                <button class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group">
+                <button onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
                     <div class="${bgClass} ${colorClass} p-2 rounded-xl mb-2 group-hover:scale-110 transition-transform duration-300">
                         <i data-lucide="${icon}" class="w-5 h-5"></i>
                     </div>
@@ -529,6 +603,18 @@
                 </button>
             `;
         }
+
+        // Fungsi Filter Data berdasarkan Kategori (Klik dari Dashboard)
+        window.filterFiles = function(type) {
+            navigate('search'); // Pindah ke menu search
+            setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                if(searchInput) {
+                    searchInput.value = type;
+                    handleSearch(); // Eksekusi pencarian
+                }
+            }, 100);
+        };
 
         // Logika Pencarian Real-time
         function handleSearch() {
@@ -547,8 +633,8 @@
                         <div class="bg-slate-800 p-4 rounded-full w-max mx-auto mb-3">
                             <i data-lucide="file-question" class="w-8 h-8 text-slate-400"></i>
                         </div>
-                        <p class="text-sm font-semibold text-slate-300">File tidak ditemukan</p>
-                        <p class="text-[10px] text-slate-500 mt-1">Coba gunakan kata kunci lain</p>
+                        <p class="text-sm font-semibold text-slate-300">Dokumen tidak ditemukan</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Coba gunakan kata kunci atau ekstensi lain</p>
                     </div>`;
             } else {
                 resultsContainer.innerHTML = filtered.map(file => createFileCard(file)).join('');
@@ -556,56 +642,97 @@
             lucide.createIcons();
         }
 
-        // Proses Upload Real ke Google Drive
+        // Proses Upload (Bisa File Fisik, Bisa Web Link)
         function handleUpload(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
-            const fileInput = document.getElementById('fileInput');
-            const docCategory = document.getElementById('docCategory').value;
 
-            if(fileInput.files.length === 0) return alert("Pilih file terlebih dahulu!");
-            
             if(GAS_API_URL.includes('AKfycb...')) {
                 return alert("Fitur dikunci: Harap masukkan URL API Google Apps Script terlebih dahulu.");
             }
 
-            const file = fileInput.files[0];
-
-            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Mengunggah...`;
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Memproses...`;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
             btn.disabled = true;
             lucide.createIcons();
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const base64Data = event.target.result.split(',')[1];
-                const payload = { 
-                    fileName: file.name, 
-                    mimeType: file.type, 
-                    fileData: base64Data,
-                    // Kategori ini bisa ditangkap di backend (GAS) jika Anda ingin menggunakannya nanti
-                    category: docCategory 
-                };
+            let payload = {};
 
+            // Logika untuk upload FILE FISIK
+            if (window.activeUploadMode === 'file') {
+                const fileInput = document.getElementById('fileInput');
+                const docCategory = document.getElementById('docCategory').value;
+
+                if(fileInput.files.length === 0) {
+                    resetBtn();
+                    return alert("Pilih file fisik terlebih dahulu!");
+                }
+
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Data = event.target.result.split(',')[1];
+                    payload = { 
+                        fileName: file.name, 
+                        mimeType: file.type, 
+                        fileData: base64Data,
+                        category: docCategory 
+                    };
+                    sendPayloadToGAS(payload, true); // Eksekusi kirim
+                };
+                reader.readAsDataURL(file);
+            } 
+            // Logika cerdas untuk upload TAUTAN LINK (Menyulap link jadi File Web HTML)
+            else {
+                const urlInput = document.getElementById('linkUrl').value;
+                const linkName = document.getElementById('linkName').value;
+                const linkCategory = document.getElementById('linkCategory').value;
+
+                if(!urlInput || !linkName) {
+                    resetBtn();
+                    return alert("Lengkapi URL dan Judul Dokumen Tautan!");
+                }
+
+                // Kita buat file HTML sederhana yang ketika diklik akan langsung redirect ke Spreadsheet/Link tersebut
+                const htmlContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${urlInput}"></head><body style="background:#0b1121; color:#fff; font-family:sans-serif; text-align:center; padding-top:50px;"><h2>Mengalihkan ke Dokumen...</h2><p>Jika tidak dialihkan otomatis, <a href="${urlInput}" style="color:#39FF14;">klik di sini</a></p></body></html>`;
+                
+                // Konversi string HTML ke format base64
+                const base64Data = btoa(unescape(encodeURIComponent(htmlContent)));
+
+                payload = {
+                    fileName: `${linkName}.html`, // Disimpan di Google Drive dengan ekstensi HTML
+                    mimeType: 'text/html',
+                    fileData: base64Data,
+                    category: linkCategory
+                };
+                sendPayloadToGAS(payload, false); // Eksekusi kirim
+            }
+
+            // Fungsi eksekusi jaringan terpusat
+            function sendPayloadToGAS(dataPayload, isPhysicalFile) {
                 fetch(GAS_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(dataPayload)
                 })
                 .then(res => res.json())
                 .then(res => {
                     if(res.status === 'success') {
-                        showToast('File berhasil diunggah!');
-                        // Reset Form
-                        fileInput.value = '';
-                        document.getElementById('docName').value = '';
-                        document.getElementById('docCategory').value = 'FILE';
-                        document.getElementById('fileNameDisplay').innerText = 'Ketuk untuk memilih file dokumen';
+                        showToast(isPhysicalFile ? 'File berhasil diunggah!' : 'Tautan berhasil diamankan!');
+                        // Reset Form berdasarkan mode
+                        if(isPhysicalFile) {
+                            document.getElementById('fileInput').value = '';
+                            document.getElementById('docName').value = '';
+                            document.getElementById('fileNameDisplay').innerText = 'Ketuk untuk memilih file dokumen';
+                        } else {
+                            document.getElementById('linkUrl').value = '';
+                            document.getElementById('linkName').value = '';
+                        }
                         
                         resetBtn();
-                        fetchData(); // Muat ulang data terbaru
+                        fetchData(); // Sinkronisasi ulang data terbaru di latar belakang
                     } else {
-                        alert("Gagal mengunggah: " + (res.message || "Unknown Error"));
+                        alert("Gagal menyimpan ke Drive: " + (res.message || "Unknown Error"));
                         resetBtn();
                     }
                 })
@@ -613,9 +740,7 @@
                     alert("Kesalahan jaringan. Pastikan URL API benar.");
                     resetBtn();
                 });
-            };
-            
-            reader.readAsDataURL(file);
+            }
 
             function resetBtn() {
                 btn.innerHTML = `<i data-lucide="hard-drive-upload" class="w-5 h-5"></i> Simpan ke Database`;
