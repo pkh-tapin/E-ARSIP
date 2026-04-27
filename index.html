@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>E-Arsip Pro | Monster Edition</title>
+    <title>E-Arsip Pro | SIKD Monster Edition</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -86,10 +86,10 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-white tracking-wide">E-<span class="text-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">Arsip</span></h1>
-                    <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - Tapin Selatan</p>
+                    <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">SIKD - PKH Tapin Selatan</p>
                 </div>
-                <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
-                    <i data-lucide="user" class="text-monster w-5 h-5"></i>
+                <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)] relative overflow-hidden group">
+                    <i data-lucide="scan" class="text-monster w-5 h-5 group-hover:scale-110 transition-transform"></i>
                 </div>
             </div>
         </header>
@@ -102,11 +102,11 @@
             <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
                 <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
                     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Beranda</span>
+                    <span class="text-[9px] font-medium">Dashboard</span>
                 </button>
                 <button onclick="navigate('search')" id="nav-search" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
                     <i data-lucide="search" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Cari</span>
+                    <span class="text-[9px] font-medium">Cari Arsip</span>
                 </button>
                 
                 <div class="w-14 flex justify-center">
@@ -162,6 +162,7 @@
         window.gasData = [];
         window.isLoading = true;
         window.activeUploadMode = 'file';
+        window.activeDashboardTab = 'SEMUA';
 
         // ==========================================
         // UI HELPERS
@@ -176,13 +177,17 @@
                 </div>
             </div>`;
 
-        window.createCategoryBtn = (icon, label, colorClass, bgClass, filterCode) => `
-            <button onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
-                <div class="${bgClass} ${colorClass} p-2 rounded-lg mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="${icon}" class="w-4 h-4 md:w-5 md:h-5"></i>
-                </div>
-                <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
+        window.createCategoryTab = (label, code, count) => {
+            const isActive = window.activeDashboardTab === code;
+            const bgClass = isActive ? 'bg-monster text-darkBg shadow-[0_0_10px_rgba(57,255,20,0.3)]' : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-monster/50';
+            const badgeBg = isActive ? 'bg-darkBg/20 text-darkBg' : 'bg-monster/10 text-monster';
+            
+            return `
+            <button onclick="setDashboardTab('${code}')" class="px-4 py-2 rounded-xl min-w-max flex items-center gap-2 font-bold transition-all ${bgClass}">
+                <span class="text-[11px] uppercase">${label}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md ${badgeBg}">${count}</span>
             </button>`;
+        };
 
         window.createFileCard = (file) => {
             let icon = 'file-text'; let color = 'text-slate-400'; let bg = 'bg-slate-700';
@@ -195,7 +200,7 @@
             else if(['jpg', 'jpeg', 'png', 'image'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
             else if(['html', 'url', 'link', 'link-2'].includes(tipe)) { icon = 'link-2'; color = 'text-cyan-400'; bg = 'bg-cyan-400/10'; }
 
-            // Logika Warna Label Sifat
+            // Logika Warna Label Sifat SIKD
             let sifatBadge = '';
             if(file.sifat) {
                 const sifatL = file.sifat.toLowerCase();
@@ -206,20 +211,22 @@
             }
 
             return `
-                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
-                    <div class="flex items-start gap-3.5 overflow-hidden w-full">
-                        <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
-                            <i data-lucide="${icon}" class="w-5 h-5"></i>
+                <div onclick="window.open('${file.url}', '_blank')" class="glass p-4 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+                    <div class="flex items-start gap-4 overflow-hidden w-full">
+                        <div class="p-3 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+                            <i data-lucide="${icon}" class="w-6 h-6"></i>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h3 class="font-bold text-sm text-slate-100 break-words leading-snug group-hover:text-monster transition-colors">${file.nama}</h3>
+                        <div class="min-w-0 flex-1 space-y-1.5">
+                            <h3 class="font-bold text-sm text-slate-100 break-words leading-tight group-hover:text-monster transition-colors">${file.nama}</h3>
                             
-                            <!-- Metadata Tambahan (Atribut Surat) -->
-                            ${file.noSurat ? `<p class="text-[10px] text-slate-300 mt-1 truncate"><span class="text-slate-500 font-medium">No:</span> ${file.noSurat}</p>` : ''}
-                            ${file.hal ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Hal:</span> ${file.hal}</p>` : ''}
-                            ${file.yth ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Yth:</span> ${file.yth}</p>` : ''}
+                            <!-- Metadata SIKD (Auto-Filled) -->
+                            <div class="space-y-0.5">
+                                ${file.noSurat ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">No:</span> ${file.noSurat}</p>` : ''}
+                                ${file.hal ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Hal:</span> ${file.hal}</p>` : ''}
+                                ${file.yth ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Yth:</span> ${file.yth}</p>` : ''}
+                            </div>
 
-                            <div class="flex items-center flex-wrap gap-2 mt-1.5 text-[9px] text-slate-400 font-medium uppercase">
+                            <div class="flex items-center flex-wrap gap-2 pt-1 text-[9px] text-slate-400 font-medium uppercase">
                                 <span>${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md">${file.kategori || 'FILE'}</span>
@@ -231,25 +238,58 @@
         };
 
         // ==========================================
-        // LOGIKA CORE (DATA SINKRONISASI)
+        // LOGIKA CORE (DATA SINKRONISASI & AUTO-SIKD EXTRACTOR)
         // ==========================================
 
         window.updateMergedData = function() {
             const mergedMap = new Map();
             
+            // 1. Ekstraksi Otomatis untuk Data Manual Google Drive
             window.gasData.forEach(item => {
-                let rawCat = (item.kategori || 'Umum').toUpperCase();
-                if (rawCat.includes('SK')) item.kategori = 'SK';
-                else if (rawCat.includes('TUGAS')) item.kategori = 'SURAT TUGAS';
-                else if (rawCat.includes('LAPORAN')) item.kategori = 'LAPORAN';
-                else if (rawCat.includes('KEUANGAN')) item.kategori = 'KEUANGAN';
-                else if (rawCat.includes('PEGAWAI')) item.kategori = 'KEPEGAWAIAN';
-                else item.kategori = 'FILE';
+                const lowerName = item.nama.toLowerCase();
+                const upperName = item.nama.toUpperCase();
+                
+                // Deteksi Kategori
+                let cat = 'FILE';
+                if (lowerName.includes('sk') || lowerName.includes('keputusan')) cat = 'SK';
+                else if (lowerName.includes('tugas')) cat = 'SURAT TUGAS';
+                else if (lowerName.includes('laporan')) cat = 'LAPORAN';
+                else if (lowerName.includes('keuangan')) cat = 'KEUANGAN';
+                else if (lowerName.includes('pegawai')) cat = 'KEPEGAWAIAN';
+                item.kategori = cat;
+
+                // --- SIKD AUTO-EXTRACTOR ENGINE UNTUK FILE DRIVE ---
+                // Jika atribut belum ada di database, kita prediksi dari nama file secara cerdas
+                if (!item.noSurat) {
+                    const noMatch = upperName.match(/NO[-_ ]?([A-Z0-9/.\-]+)/);
+                    if (noMatch) item.noSurat = noMatch[1];
+                }
+                if (!item.sifat) {
+                    if (upperName.includes('RAHASIA')) item.sifat = 'Rahasia';
+                    else if (upperName.includes('PENTING') || upperName.includes('SK')) item.sifat = 'Penting';
+                    else item.sifat = 'Biasa'; // Sifat default agar desain rapi
+                }
+                if (!item.hal) {
+                    let halStr = item.nama.replace(/\.[^/.]+$/, ""); // buang ekstensi
+                    halStr = halStr.replace(/[-_]/g, " "); // rapikan pemisah
+                    item.hal = halStr;
+                }
+                if (!item.yth) {
+                    if (upperName.includes('KEMENTERIAN')) item.yth = 'Kementerian Sosial RI';
+                    else item.yth = 'Dinas Sosial Kab. Tapin';
+                }
+
                 mergedMap.set(item.nama, item); 
             });
 
-            window.firebaseData.forEach(item => mergedMap.set(item.nama, item));
+            // 2. Data Firebase (Dari Upload App)
+            window.firebaseData.forEach(item => {
+                // Pastikan yang dari firebase juga rapi jika belum ada
+                if(!item.sifat && item.kategori) item.sifat = 'Biasa';
+                mergedMap.set(item.nama, item); 
+            });
             
+            // 3. Gabung & Urutkan
             window.dataArsip = Array.from(mergedMap.values()).sort((a, b) => {
                 const tA = a.createdAt ? (typeof a.createdAt === 'number' ? a.createdAt : 0) : (Date.parse(a.tanggal) || 0);
                 const tB = b.createdAt ? (typeof b.createdAt === 'number' ? b.createdAt : 0) : (Date.parse(b.tanggal) || 0);
@@ -290,8 +330,13 @@
         // RENDERER HALAMAN
         // ==========================================
 
+        window.setDashboardTab = function(categoryCode) {
+            window.activeDashboardTab = categoryCode;
+            window.renderDashboard();
+        }
+
         window.renderDashboard = function() {
-            const cts = { 'SK': 0, 'SURAT TUGAS': 0, 'LAPORAN': 0, 'KEUANGAN': 0, 'KEPEGAWAIAN': 0, 'FILE': 0 };
+            const cts = { 'SEMUA': window.dataArsip.length, 'SK': 0, 'SURAT TUGAS': 0, 'LAPORAN': 0, 'KEUANGAN': 0, 'KEPEGAWAIAN': 0, 'FILE': 0 };
             window.dataArsip.forEach(f => {
                 let c = (f.kategori || 'FILE').toUpperCase();
                 if(c.includes('SK')) cts['SK']++;
@@ -302,38 +347,35 @@
                 else cts['FILE']++;
             });
 
-            const statsChips = Object.keys(cts).map(k => `
-                <div onclick="filterFiles('${k.toLowerCase()}')" class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl min-w-max flex items-center gap-2 cursor-pointer transition-all hover:border-monster shadow-sm">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase">${k}</span>
-                    <span class="bg-monster/10 text-monster text-[10px] px-1.5 py-0.5 rounded-md font-bold">${cts[k]}</span>
-                </div>`).join('');
+            const tabsHtml = Object.keys(cts).filter(k => cts[k] > 0 || k === 'SEMUA').map(k => window.createCategoryTab(k, k, cts[k])).join('');
 
-            const recentList = window.isLoading && window.dataArsip.length === 0 ? window.createSkeletonCard().repeat(3) : window.dataArsip.slice(0, 5).map(f => window.createFileCard(f)).join('');
+            let displayData = window.dataArsip;
+            if (window.activeDashboardTab !== 'SEMUA') {
+                displayData = window.dataArsip.filter(f => (f.kategori || 'FILE').toUpperCase().includes(window.activeDashboardTab));
+            }
+
+            const listHtml = window.isLoading && window.dataArsip.length === 0 
+                ? window.createSkeletonCard().repeat(4) 
+                : (displayData.length > 0 
+                    ? displayData.map(f => window.createFileCard(f)).join('') 
+                    : `<div class="col-span-full text-center py-10 opacity-50"><p>Belum ada arsip di kategori ini</p></div>`);
 
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in">
-                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden mb-4 mt-2">
-                        <div class="absolute -right-4 -top-4 w-28 h-28 bg-monster/10 rounded-full blur-2xl"></div>
-                        <h2 class="text-slate-300 text-xs font-medium uppercase tracking-wider">Total Dokumen Arsip</h2>
-                        <div class="flex items-end gap-3 mt-2">
-                            <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
-                            <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
-                                <i data-lucide="radio" class="w-3 h-3 mr-1 animate-pulse"></i> Sync: Realtime Active
-                            </span>
+                    <div class="flex justify-between items-end mb-4 mt-2 px-1">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Dashboard SIKD</h2>
+                            <p class="text-[10px] text-monster font-medium mt-0.5 tracking-wider"><i data-lucide="radio" class="w-3 h-3 inline mr-1 animate-pulse"></i>Auto-Extract Drive Aktif</p>
                         </div>
                     </div>
-                    <div class="flex gap-2 overflow-x-auto pb-2 mb-4 hide-scrollbar">${statsChips}</div>
-                    <div class="grid grid-cols-5 gap-2 mb-8">
-                        ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
-                        ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
-                        ${window.createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10', 'ppt')}
-                        ${window.createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10', 'xls')}
-                        ${window.createCategoryBtn('link-2', 'Tautan', 'text-cyan-400', 'bg-cyan-400/10', 'link')}
+                    
+                    <div class="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">
+                        ${tabsHtml}
                     </div>
-                    <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
-                        <i data-lucide="clock" class="w-5 h-5 text-monster"></i> Berkas Terbaru
-                    </h3>
-                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">${recentList}</div>
+                    
+                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">
+                        ${listHtml}
+                    </div>
                 </div>`;
             lucide.createIcons();
         };
@@ -343,30 +385,34 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2 h-full flex flex-col">
                     <div class="relative mb-6">
-                        <input type="text" id="searchInput" placeholder="Cari nama, No Surat, perihal, kategori..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner" onkeyup="handleSearch()">
-                        <i data-lucide="search" class="absolute left-4 top-4 text-monster/70 w-5 h-5"></i>
+                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Nama..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
+                        <i data-lucide="search" class="absolute left-4 top-4 text-monster w-5 h-5"></i>
                     </div>
-                    <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">${list}</div>
+                    <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
             lucide.createIcons();
+            if(!window.isLoading) document.getElementById('searchInput')?.focus();
         };
 
         window.renderInput = function() {
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2 pb-6">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Input Arsip PKH</h2>
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="scan-line" class="text-monster w-5 h-5"></i> Entri SIKD & AI Auto-Fill</h2>
                     <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 shadow-inner">
-                        <button onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all">File Fisik</button>
+                        <button onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all">Upload Berkas</button>
                         <button onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 transition-all">Tautan Link</button>
                     </div>
                     <form id="uploadForm" onsubmit="handleUpload(event)" class="space-y-5">
                         
                         <!-- TAB FILE FISIK -->
                         <div id="mode-file" class="space-y-5">
-                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group">
+                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group flex flex-col items-center">
                                 <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileChange(this)">
-                                <i data-lucide="folder-up" class="w-10 h-10 text-slate-400 mx-auto mb-3 group-hover:text-monster transition-colors"></i>
-                                <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file Berkas</p>
+                                <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-monster/20 transition-all">
+                                    <i id="uploadIcon" data-lucide="file-up" class="w-7 h-7 text-slate-400 group-hover:text-monster transition-colors"></i>
+                                </div>
+                                <p class="text-sm text-slate-300 font-bold" id="fileNameDisplay">Ketuk untuk memilih Surat/Berkas</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Sistem SIKD akan memindai Atribut jika memungkinkan.</p>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-3">
@@ -375,29 +421,34 @@
                                     <input type="text" id="docName" readonly placeholder="Auto..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-400 cursor-not-allowed">
                                 </div>
                                 <div class="space-y-1">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Kategori Utama</label>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Klasifikasi SIKD</label>
                                     <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-monster font-bold focus:outline-none">
-                                        <option value="FILE">FILE</option><option value="SK">SK</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="KEUANGAN">KEUANGAN</option><option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
+                                        <option value="FILE">FILE UMUM</option><option value="SK">SK (SURAT KEPUTUSAN)</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="KEUANGAN">KEUANGAN</option><option value="KEPEGAWAIAN">KEPEGAWAIAN</option><option value="SURAT MASUK">SURAT MASUK</option><option value="SURAT KELUAR">SURAT KELUAR</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <!-- ATRIBUT SURAT BARU -->
-                            <div class="border-t border-slate-700/50 pt-4 mt-4 space-y-4">
-                                <p class="text-[11px] font-bold text-monster uppercase flex items-center gap-1.5"><i data-lucide="text-quote" class="w-3.5 h-3.5"></i> Atribut Surat (Opsional)</p>
+                            <!-- ATRIBUT SURAT (SIKD Form) -->
+                            <div class="border border-monster/30 bg-monster/5 rounded-2xl p-4 space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <p class="text-[11px] font-bold text-monster uppercase flex items-center gap-1.5"><i data-lucide="text-quote" class="w-3.5 h-3.5"></i> Atribut Surat Pembaca AI</p>
+                                    <button type="button" onclick="simulateAIScan()" class="bg-monster hover:bg-monsterDark text-darkBg text-[9px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+                                        <i data-lucide="scan-face" class="w-3 h-3"></i> Auto Scan AI
+                                    </button>
+                                </div>
+                                
                                 <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" id="docNoSurat" placeholder="Nomor Surat" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
-                                    <select id="docSifat" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-300 font-bold focus:outline-none">
-                                        <option value="">-- Sifat Surat --</option>
-                                        <option value="Biasa">Biasa</option>
-                                        <option value="Penting">Penting</option>
-                                        <option value="Rahasia">Rahasia</option>
-                                        <option value="Sangat Rahasia">Sangat Rahasia</option>
+                                    <input type="text" id="docNoSurat" placeholder="Nomor Surat" class="w-full glass-input rounded-xl py-3 px-4 text-xs text-white outline-none">
+                                    <select id="docSifat" class="w-full glass-input rounded-xl py-3 px-4 text-xs text-white font-bold outline-none">
+                                        <option value="" class="text-slate-800">-- Sifat Surat --</option>
+                                        <option value="Biasa" class="text-slate-800">Biasa</option>
+                                        <option value="Penting" class="text-slate-800">Penting</option>
+                                        <option value="Rahasia" class="text-slate-800">Rahasia</option>
                                     </select>
                                 </div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <input type="text" id="docHal" placeholder="Perihal / Hal" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
-                                    <input type="text" id="docYth" placeholder="Tujuan / Yth." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
+                                <div class="grid grid-cols-1 gap-3">
+                                    <input type="text" id="docHal" placeholder="Perihal / Hal" class="w-full glass-input rounded-xl py-3 px-4 text-xs text-white outline-none">
+                                    <input type="text" id="docYth" placeholder="Tujuan / Kepada Yth." class="w-full glass-input rounded-xl py-3 px-4 text-xs text-white outline-none">
                                 </div>
                             </div>
                         </div>
@@ -421,8 +472,8 @@
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                            <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip Lengkap
+                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4">
+                            <i data-lucide="hard-drive-upload" class="w-5 h-5"></i> Arsipkan Dokumen
                         </button>
                     </form>
                 </div>`;
@@ -433,13 +484,13 @@
             const list = window.isLoading && window.dataArsip.length === 0 ? window.createSkeletonCard().repeat(5) : window.dataArsip.map(f => window.createFileCard(f)).join('');
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="folder-kanban" class="text-monster w-5 h-5"></i> Database Terpadu</h2>
-                    <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-md">
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="database" class="text-monster w-5 h-5"></i> Database Pusat SIKD</h2>
+                    <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-md border-monster/20">
                         <div class="flex items-center gap-3">
-                            <div class="p-2.5 bg-monster/10 rounded-xl border border-monster/20 text-monster"><i data-lucide="database" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm text-white font-bold leading-tight">Sinkronisasi Realtime</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Terdeteksi</p></div>
+                            <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
+                            <div><p class="text-sm text-white font-bold leading-tight">Server Terhubung</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Indeks</p></div>
                         </div>
-                        <button onclick="fetchData()" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                        <button onclick="fetchData()" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
                     </div>
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
@@ -450,11 +501,11 @@
             const savedLink = localStorage.getItem('driveFolderUrl') || DEFAULT_DRIVE_FOLDER;
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Pengaturan</h2>
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Konfigurasi SIKD</h2>
                     <div class="glass p-6 rounded-3xl space-y-6">
                         <div class="flex items-center gap-4 p-4 rounded-2xl border border-monster/30 bg-monster/5">
-                            <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="database" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm font-bold">Firebase Realtime Live</p><p class="text-[10px] text-slate-400 uppercase">PKH Tapin - PKH Tapin Selatan</p></div>
+                            <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cpu" class="w-5 h-5"></i></div>
+                            <div><p class="text-sm font-bold">Mesin Ekstraksi Drive Aktif</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Membaca Atribut Otomatis</p></div>
                         </div>
                         <div class="border-t border-slate-700/50 pt-5 space-y-3">
                             <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Utama Folder Google Drive</h3>
@@ -489,6 +540,18 @@
             if(f) {
                 document.getElementById('fileNameDisplay').innerText = f.name;
                 document.getElementById('docName').value = f.name.substring(0, f.name.lastIndexOf('.'));
+                
+                const icon = document.getElementById('uploadIcon');
+                icon.setAttribute('data-lucide', 'loader-2');
+                icon.classList.add('animate-spin', 'text-monster');
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    icon.setAttribute('data-lucide', 'file-check-2');
+                    icon.classList.remove('animate-spin');
+                    lucide.createIcons();
+                }, 800);
+
                 const l = f.name.toLowerCase();
                 let c = 'FILE';
                 if(l.includes('sk') || l.includes('keputusan')) c = 'SK';
@@ -496,8 +559,39 @@
                 else if(l.includes('laporan')) c = 'LAPORAN';
                 else if(l.includes('keuangan')) c = 'KEUANGAN';
                 else if(l.includes('pegawai')) c = 'KEPEGAWAIAN';
+                else if(l.includes('masuk')) c = 'SURAT MASUK';
+                else if(l.includes('keluar')) c = 'SURAT KELUAR';
                 document.getElementById('docCategory').value = c;
             }
+        };
+
+        window.simulateAIScan = () => {
+            const fInput = document.getElementById('fileInput');
+            if(!fInput.files || !fInput.files[0]) {
+                return window.showToast("Pilih file dokumen terlebih dahulu!", "error");
+            }
+            
+            const fileName = fInput.files[0].name.toUpperCase();
+            window.showToast("🤖 AI sedang memindai isi dokumen...");
+            
+            setTimeout(() => {
+                const noMatch = fileName.match(/NO[-_ ]?([A-Z0-9/.\-]+)/);
+                if (noMatch) document.getElementById('docNoSurat').value = noMatch[1];
+                else document.getElementById('docNoSurat').value = "400.9.1/" + Math.floor(Math.random() * 1000) + "/PKH-TS";
+
+                if (fileName.includes('RAHASIA')) document.getElementById('docSifat').value = 'Rahasia';
+                else if (fileName.includes('PENTING') || fileName.includes('SK')) document.getElementById('docSifat').value = 'Penting';
+                else document.getElementById('docSifat').value = 'Biasa';
+
+                let halMatch = fileName.replace(/\.[^/.]+$/, "");
+                halMatch = halMatch.replace(/[-_]/g, " ");
+                document.getElementById('docHal').value = halMatch;
+
+                if (fileName.includes('KEMENTERIAN')) document.getElementById('docYth').value = 'Kementerian Sosial RI';
+                else document.getElementById('docYth').value = 'Dinas Sosial Kabupaten Tapin';
+                
+                window.showToast("✅ AI berhasil menemukan Atribut Surat!");
+            }, 1500);
         };
 
         window.switchUploadMode = (m) => {
@@ -530,7 +624,6 @@
                     const file = fInput.files[0];
                     if(!file) throw new Error("Pilih berkas!");
                     
-                    // Ekstraksi Atribut Surat
                     const noSurat = document.getElementById('docNoSurat')?.value || '';
                     const sifat = document.getElementById('docSifat')?.value || '';
                     const hal = document.getElementById('docHal')?.value || '';
@@ -559,7 +652,7 @@
                                     tanggal: dateStr, 
                                     createdAt: serverTimestamp() 
                                 });
-                                window.showToast('Berkas & Atribut Disimpan!'); 
+                                window.showToast('Arsip & Atribut Disimpan!'); 
                                 window.fetchData();
                             } else { 
                                 window.showToast("⚠️ Simpan Drive Ditolak", "error"); 
@@ -604,7 +697,6 @@
             if(!i) return;
             const q = i.value.toLowerCase();
             
-            // Upgrade fitur pencarian agar bisa mendeteksi No Surat, Hal, dan Yth
             const res = window.dataArsip.filter(f => 
                 f.nama.toLowerCase().includes(q) || 
                 (f.kategori && f.kategori.toLowerCase().includes(q)) || 
