@@ -71,6 +71,10 @@
         ::-webkit-scrollbar-thumb { background: rgba(57, 255, 20, 0.3); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(57, 255, 20, 0.6); }
 
+        /* Sembunyikan scrollbar khusus untuk navigasi horizontal */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
         /* Animasi Transisi Halaman */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn {
@@ -183,7 +187,9 @@
                     dataArsip = [
                         // Mockup dengan format link yang terenkripsi di nama file
                         { id: 1, nama: 'Tautan_Database_Warga_2026___LINK___https%3A%2F%2Fdocs.google.com%2Fspreadsheets.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
-                        { id: 2, nama: 'SK_Pegawai.pdf', tipe: 'pdf', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
+                        { id: 2, nama: 'SK_Pegawai.pdf', tipe: 'pdf', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' },
+                        { id: 3, nama: 'Undangan_Rapat.docx', tipe: 'docx', tanggal: '14 Apr 2026', ukuran: '500 KB', kategori: 'PEMBERITAHUAN', url: '#' },
+                        { id: 4, nama: 'Surat_Tugas_Luar_Kota.pdf', tipe: 'pdf', tanggal: '12 Apr 2026', ukuran: '800 KB', kategori: 'SURAT KELUAR', url: '#' }
                     ];
                 } else {
                     const response = await fetch(GAS_API_URL);
@@ -220,6 +226,37 @@
         function renderDashboard() {
             let totalFiles = isLoading ? '-' : dataArsip.length;
             
+            // Hitung Jumlah Statistik per Kategori
+            const catCounts = {
+                'SK': 0, 'SURAT MASUK': 0, 'SURAT KELUAR': 0,
+                'PEMBERITAHUAN': 0, 'DATA': 0, 'FILE': 0, 'LAINYA': 0
+            };
+            
+            if(!isLoading) {
+                dataArsip.forEach(f => {
+                    let c = f.kategori ? f.kategori.toUpperCase() : 'FILE';
+                    if (catCounts[c] !== undefined) catCounts[c]++;
+                    else catCounts['LAINYA']++; // Fallback jika kategori aneh
+                });
+            }
+
+            // Buat HTML untuk chips statistik
+            let catStatsHtml = '';
+            if(!isLoading) {
+                Object.keys(catCounts).forEach(key => {
+                    // Hanya tampilkan jika jumlah > 0 untuk menghemat tempat, atau tampilkan semua jika diinginkan.
+                    // Di sini kita tampilkan semua agar user tahu list kategorinya
+                    catStatsHtml += `
+                        <div onclick="filterFiles('${key.toLowerCase()}')" class="bg-slate-800/80 border border-slate-700 hover:border-monster/50 px-3 py-2 rounded-xl min-w-max flex items-center gap-2 cursor-pointer transition-all hover:shadow-[0_0_10px_rgba(57,255,20,0.15)] group">
+                            <span class="text-[11px] font-medium text-slate-300 group-hover:text-white transition-colors">${key}</span>
+                            <span class="bg-monster/10 text-monster text-[10px] px-1.5 py-0.5 rounded-md font-bold border border-monster/20">${catCounts[key]}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                catStatsHtml = `<div class="text-[10px] text-slate-500 italic px-1">Mengkalkulasi statistik kategori...</div>`;
+            }
+            
             let recentFilesHtml = '';
             if (isLoading) {
                 recentFilesHtml = createSkeletonCard() + createSkeletonCard() + createSkeletonCard();
@@ -231,8 +268,8 @@
 
             contentArea.innerHTML = `
                 <div class="fade-in">
-                    <!-- Kartu Statistik -->
-                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden mb-6 mt-2">
+                    <!-- Kartu Statistik Utama -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden mb-4 mt-2">
                         <div class="absolute -right-4 -top-4 w-28 h-28 bg-monster/10 rounded-full blur-2xl"></div>
                         <h2 class="text-slate-300 text-xs font-medium uppercase tracking-wider">Total Dokumen Arsip</h2>
                         <div class="flex items-end gap-3 mt-2">
@@ -243,7 +280,12 @@
                         </div>
                     </div>
 
-                    <!-- Kategori Cepat (Dengan Filter Aktif + Tambahan Link) -->
+                    <!-- Statistik Per Kategori (Horizontal Scrollable) -->
+                    <div class="flex gap-2 overflow-x-auto pb-2 mb-4 hide-scrollbar">
+                        ${catStatsHtml}
+                    </div>
+
+                    <!-- Kategori Cepat (Berdasarkan Tipe File Ekstensi) -->
                     <div class="grid grid-cols-5 md:grid-cols-8 gap-2 md:gap-3 mb-8">
                         ${createCategoryBtn('pdf', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
                         ${createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
@@ -423,6 +465,7 @@
                     let detectedCategory = 'FILE';
                     const lowerName = nameWithoutExt.toLowerCase();
 
+                    // Algoritma Pintar Deteksi Nama File ke Kategori Baru
                     if (lowerName.includes('sk') || lowerName.includes('keputusan')) detectedCategory = 'SK';
                     else if (lowerName.includes('masuk')) detectedCategory = 'SURAT MASUK';
                     else if (lowerName.includes('keluar')) detectedCategory = 'SURAT KELUAR';
@@ -527,7 +570,7 @@
                             <div class="space-y-3 text-xs text-slate-300">
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="tag" class="w-4 h-4 text-slate-500"></i> Versi Aplikasi</span>
-                                    <span class="font-bold text-white">v3.5 (Blueprint Final)</span>
+                                    <span class="font-bold text-white">v4.0 (Blueprint Final)</span>
                                 </div>
                                 <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl">
                                     <span class="flex items-center gap-2"><i data-lucide="server" class="w-4 h-4 text-slate-500"></i> Basis Data</span>
@@ -614,7 +657,7 @@
             let displayName = file.nama;
             let targetUrl = file.url;
 
-            // Logika Dekripsi Tautan Tersembunyi (Langsung Buka Tautan Asli)
+            // Logika Dekripsi Tautan Tersembunyi (Langsung Buka Tautan Asli Tanpa Buka Google Drive)
             if (tipe === 'html' && file.nama.includes('___LINK___')) {
                 const parts = file.nama.split('___LINK___');
                 displayName = parts[0];
@@ -625,7 +668,7 @@
                     targetUrl = file.url;
                 }
             } else if (tipe === 'html') {
-                // Menghilangkan akhiran ekstensi di tampilan kartu .html
+                // Menghilangkan akhiran ekstensi di tampilan kartu .html jika diupload manual via HTML
                 displayName = displayName.replace('.html', '');
             }
 
