@@ -181,7 +181,7 @@
                     // Delay simulasi untuk memperlihatkan animasi skeleton yang elegan
                     await new Promise(resolve => setTimeout(resolve, 1500)); 
                     dataArsip = [
-                        { id: 1, nama: 'Link_Laporan_Data_Penduduk_Google_Sheets.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
+                        { id: 1, nama: 'Tautan_Database_Warga_2026.html', tipe: 'html', tanggal: '16 Apr 2026', ukuran: '1 KB', kategori: 'DATA', url: '#' },
                         { id: 2, nama: 'SK_Pegawai.pdf', tipe: 'pdf', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
                     ];
                 } else {
@@ -242,12 +242,13 @@
                         </div>
                     </div>
 
-                    <!-- Kategori Cepat (Dengan Filter Aktif) -->
-                    <div class="grid grid-cols-4 md:grid-cols-8 gap-3 mb-8">
+                    <!-- Kategori Cepat (Dengan Filter Aktif + Tambahan Link) -->
+                    <div class="grid grid-cols-5 md:grid-cols-8 gap-2 md:gap-3 mb-8">
                         ${createCategoryBtn('pdf', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
                         ${createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
                         ${createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10', 'ppt')}
                         ${createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10', 'xls')}
+                        ${createCategoryBtn('link', 'Tautan', 'text-cyan-400', 'bg-cyan-400/10', 'html')}
                     </div>
 
                     <!-- Arsip Terbaru -->
@@ -275,7 +276,7 @@
             contentArea.innerHTML = `
                 <div class="fade-in h-full flex flex-col pt-2">
                     <div class="relative mb-6 shrink-0">
-                        <input type="text" id="searchInput" placeholder="Cari nama, kategori, pdf..." 
+                        <input type="text" id="searchInput" placeholder="Cari nama, kategori, jenis file..." 
                             class="w-full glass-input rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner"
                             onkeyup="handleSearch()">
                         <i data-lucide="search" class="absolute left-4 top-3.5 text-monster/70 w-5 h-5"></i>
@@ -595,11 +596,11 @@
         // Tombol Filter Kategori di Dashboard
         function createCategoryBtn(icon, label, colorClass, bgClass, filterCode) {
             return `
-                <button onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
-                    <div class="${bgClass} ${colorClass} p-2 rounded-xl mb-2 group-hover:scale-110 transition-transform duration-300">
-                        <i data-lucide="${icon}" class="w-5 h-5"></i>
+                <button onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
+                    <div class="${bgClass} ${colorClass} p-1.5 md:p-2 rounded-lg mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="${icon}" class="w-4 h-4 md:w-5 md:h-5"></i>
                     </div>
-                    <span class="text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors">${label}</span>
+                    <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center">${label}</span>
                 </button>
             `;
         }
@@ -610,15 +611,23 @@
             setTimeout(() => {
                 const searchInput = document.getElementById('searchInput');
                 if(searchInput) {
-                    searchInput.value = type;
-                    handleSearch(); // Eksekusi pencarian
+                    // Trik cerdas: Jika type html, tampilkan kata "Link/Tautan" di search bar
+                    searchInput.value = type === 'html' ? 'Tautan/Link' : type.toUpperCase();
+                    // Eksekusi pencarian dengan override nilai filter agar presisi
+                    handleSearch(type); 
                 }
             }, 100);
         };
 
         // Logika Pencarian Real-time
-        function handleSearch() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
+        function handleSearch(filterOverride) {
+            let query = filterOverride || document.getElementById('searchInput')?.value.toLowerCase() || "";
+            
+            // Konversi keyword manusia menjadi keyword sistem untuk pencarian tautan
+            if (query.includes('tautan') || query.includes('link')) {
+                query = 'html';
+            }
+
             const resultsContainer = document.getElementById('searchResults');
             
             const filtered = dataArsip.filter(file => 
