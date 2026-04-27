@@ -174,10 +174,11 @@
         window.syncQueue = [];
         window.isSyncing = false;
 
-        // FUNGSI SIMPAN PERMANEN KE FIREBASE (ANTI-ERROR UNDEFINED)
+        // FUNGSI SIMPAN PERMANEN KE FIREBASE (Dengan Kunci Anti-Duplikasi Drive ID)
         window.firebaseSave = async (payload) => {
             try { 
                  const safePayload = {
+                    driveId: payload.id || payload.driveId || '', // KUNCI UTAMA: Menyimpan ID unik dari Google Drive agar AI tidak memindai 2x
                     nama: payload.nama || 'Tanpa Nama',
                     tipe: payload.tipe || 'file',
                     ukuran: payload.ukuran || '-',
@@ -191,7 +192,7 @@
                     createdAt: serverTimestamp()
                 };
 
-                // PENGAMAN EKSTRA: Bersihkan undefined dari objek murni
+                // PENGAMAN EKSTRA: Bersihkan undefined dari objek murni sebelum ke Firebase
                 Object.keys(safePayload).forEach(key => {
                     if (safePayload[key] === undefined || safePayload[key] === null) {
                         safePayload[key] = '';
@@ -232,6 +233,7 @@
             let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700/30 border border-slate-600';
             const tipe = (file.tipe || 'file').toLowerCase();
             
+            // Ikon Format FIle
             if(tipe === 'pdf') { icon = 'file-text'; color = 'text-red-500'; bg = 'bg-red-500/10 border border-red-500/30'; }
             else if(['doc', 'docx'].includes(tipe)) { icon = 'file-text'; color = 'text-blue-500'; bg = 'bg-blue-500/10 border border-blue-500/30'; }
             else if(['xls', 'xlsx', 'csv'].includes(tipe)) { icon = 'table'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10 border border-emerald-500/30'; }
@@ -279,7 +281,7 @@
         };
 
         // ==========================================
-        // AUTO-SYNC & PERMANENT AI SAVER
+        // AUTO-SYNC & PERMANENT AI SAVER (100% SEKALIGUS)
         // ==========================================
         
         window.runBackgroundSync = async function() {
@@ -315,7 +317,7 @@
                         finalData.tanggalSurat = data.tanggalSurat || file.tanggal; 
                         finalData.kategori = data.kategori || file.kategori;
                     } else {
-                        // Fallback Jika File bukan surat / AI gagal (Hanya ambil nama file)
+                        // Fallback Jika File bukan surat / AI gagal
                         finalData.noSurat = '';
                         finalData.sifat = 'Biasa';
                         finalData.hal = file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
@@ -323,10 +325,11 @@
                         finalData.tanggalSurat = file.tanggal;
                     }
 
-                    // SIMPAN PERMANEN KE FIREBASE (Dengan Sistem Sanitasi Anti-Error)
+                    // SIMPAN PERMANEN KE FIREBASE
+                    // Karena fungsi save ini sukses, ID-nya akan tercatat di Database dan tidak akan discan ulang besok
                     await window.firebaseSave(finalData);
 
-                    // Jeda 2 detik antar pemindaian agar sistem tidak down
+                    // Jeda 2 detik antar pemindaian agar sistem API Google tidak memblokir (Rate Limit)
                     await new Promise(r => setTimeout(r, 2000));
                     
                 } catch (e) {
@@ -340,23 +343,29 @@
 
         window.updateMergedData = function() {
             const mergedMap = new Map();
+            const scannedDriveIds = new Set(); // KUNCI ANTI-SCAN BERULANG
             
-            // 1. Data Utama dari Firebase (Prioritas Tertinggi & Tercepat)
-            window.firebaseData.forEach(item => mergedMap.set(item.nama, item));
+            // 1. Data Utama dari Database Firebase (Prioritas Tertinggi & Tercepat)
+            window.firebaseData.forEach(item => {
+                mergedMap.set(item.nama, item);
+                if(item.driveId) scannedDriveIds.add(item.driveId); // Rekam ID file Drive yang SUDAH ADA di database
+            });
             
-            // 2. Data dari Drive (HANYA MENCARI FILE BARU)
+            // 2. Data dari Google Drive (HANYA MENCARI FILE BARU)
             window.gasData.forEach(item => {
-                if(!mergedMap.has(item.nama)) {
-                    // File Baru -> Assign kategori darurat -> Masukkan antrean AI
+                // JIKA FILE BELUM ADA DI DATABASE (Berdasarkan ID Asli atau Nama File)
+                if(!mergedMap.has(item.nama) && !scannedDriveIds.has(item.id)) {
+                    
                     let cat = 'FILE';
                     const lN = item.nama.toLowerCase();
                     if (lN.includes('sk') || lN.includes('keputusan')) cat = 'SK';
                     else if (lN.includes('tugas')) cat = 'SURAT TUGAS';
                     item.kategori = cat;
 
-                    mergedMap.set(item.nama, item); // Tampilkan sementara sebelum AI selesai
+                    mergedMap.set(item.nama, item); // Tampilkan file baru sementara di layar (Sambil menunggu AI)
                     
-                    if(!window.syncQueue.find(q => q.nama === item.nama)) {
+                    // Masukkan ke Antrean AI untuk disingkronkan ke Firebase
+                    if(!window.syncQueue.find(q => q.id === item.id)) {
                         window.syncQueue.push(item);
                     }
                 }
@@ -383,7 +392,7 @@
             window.isLoading = true; 
             window.renderDashboard(); 
             
-            // 1. Ambil dari Firebase (0 Detik Loading)
+            // 1. Ambil dari Firebase (0 Detik Loading - Mengambil data yang sudah di-scan permanen)
             onValue(ref(db, 'arsip'), (snapshot) => {
                 let tempArr = [];
                 snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
@@ -393,7 +402,7 @@
                 window.updateMergedData(); 
             });
 
-            // 2. Cek Google Drive di background
+            // 2. Cek Google Drive di background (Hanya untuk memeriksa adakah file baru diupload)
             fetch(GAS_API_URL).then(res => res.json()).then(res => {
                 if(Array.isArray(res)) window.gasData = res;
                 window.updateMergedData(); 
