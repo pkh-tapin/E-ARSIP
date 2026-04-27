@@ -180,7 +180,7 @@
                     // Delay simulasi untuk memperlihatkan animasi skeleton yang elegan
                     await new Promise(resolve => setTimeout(resolve, 1500)); 
                     dataArsip = [
-                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'DATA', url: '#' },
+                        { id: 1, nama: 'Contoh_Laporan_Belum_Konek_Sangat_Panjang_Sekali_Tahun_2026_Final.pdf', tipe: 'pdf', tanggal: '16 Apr 2026', ukuran: '2.4 MB', kategori: 'DATA', url: '#' },
                         { id: 2, nama: 'SK_Pegawai.xlsx', tipe: 'xlsx', tanggal: '15 Apr 2026', ukuran: '1.1 MB', kategori: 'SK', url: '#' }
                     ];
                 } else {
@@ -188,7 +188,16 @@
                     const result = await response.json();
                     
                     if(Array.isArray(result)) {
+                        // Sinkronisasi otomatis: urutkan data agar arsip yang terbaru (terakhir diupload) selalu di paling atas
                         dataArsip = result.reverse(); 
+                        try {
+                            dataArsip.sort((a, b) => {
+                                let dateA = new Date(a.tanggal);
+                                let dateB = new Date(b.tanggal);
+                                if(!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
+                                return 0;
+                            });
+                        } catch(e) {} // Fallback ke reverse jika format tanggal tidak terbaca
                     } else if(result.error) {
                         showToast("Error dari Drive: " + result.error);
                     }
@@ -335,7 +344,8 @@
                     const fullName = file.name;
                     const nameWithoutExt = fullName.substring(0, fullName.lastIndexOf('.')) || fullName;
                     
-                    document.getElementById('fileNameDisplay').innerHTML = `<span class="text-monster font-semibold truncate block px-4">${fullName}</span>`;
+                    // break-words memastikan nama file panjang akan berlipat ke bawah, tidak terpotong
+                    document.getElementById('fileNameDisplay').innerHTML = `<span class="text-monster font-semibold break-words leading-tight block px-4">${fullName}</span>`;
                     document.getElementById('docName').value = nameWithoutExt;
 
                     let detectedCategory = 'FILE'; // Kategori Default
@@ -485,19 +495,20 @@
             else if(['jpg', 'jpeg', 'png'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
 
             return `
-                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-center justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
-                    <div class="flex items-center gap-3.5 overflow-hidden w-full">
+                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
+                    <div class="flex items-start gap-3.5 overflow-hidden w-full">
                         <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h3 class="font-bold text-sm text-slate-100 truncate group-hover:text-monster transition-colors">${file.nama}</h3>
-                            <div class="flex items-center gap-2 mt-1 text-[9px] text-slate-400 font-medium">
-                                <span>${file.tanggal || '-'}</span>
+                            <!-- break-words memastikan tidak ada pemotongan nama file, melipat secara presisi -->
+                            <h3 class="font-bold text-sm text-slate-100 break-words leading-snug group-hover:text-monster transition-colors">${file.nama}</h3>
+                            <div class="flex items-center flex-wrap gap-2 mt-1.5 text-[9px] text-slate-400 font-medium">
+                                <span class="whitespace-nowrap">${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span>${file.ukuran || '-'}</span>
+                                <span class="whitespace-nowrap">${file.ukuran || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md truncate">${file.kategori || 'FILE'}</span>
+                                <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md whitespace-nowrap">${file.kategori || 'FILE'}</span>
                             </div>
                         </div>
                     </div>
