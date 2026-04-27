@@ -140,7 +140,7 @@
         import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // ==========================================
-        // CONFIG & API KEYS
+        // CONFIG & API KEYS (Aman, API Key Gemini di-hide di Backend GAS)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCCWghHoB-YWITU1eWxWhEYODjuPzVgbl4",
@@ -153,7 +153,7 @@
         };
 
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbynbDyrrPkY6vBkJkryaHItZX1UTsqJQWbHHpHKLRARcVXlSeCf97Xj4wjgdZCL4rrN/exec'; 
-        const GEMINI_API_KEY = "AIzaSyCXYivKXcTvl24qRD2jrxHdAfBi-6h09A4"; // KUNCI API GEMINI ANDA (Disediakan di Lingkungan Eksekusi)
+        const DEFAULT_DRIVE_FOLDER = "https://drive.google.com/drive/folders/1UU30WaxtqKg8ZuhbyYUgv3tmrRD2OliO?hl=id";
 
         // Inisialisasi
         const app = initializeApp(firebaseConfig);
@@ -166,8 +166,17 @@
         window.isLoading = true;
         window.activeUploadMode = 'file';
 
+        // Fungsi Global Firebase Push (Digunakan oleh AI Scanner Backend)
+        window.firebaseSave = async (payload) => {
+            try {
+                await push(ref(db, "arsip"), payload);
+            } catch(e) {
+                console.error("Gagal simpan Firebase:", e);
+            }
+        };
+
         // ==========================================
-        // UI HELPERS (Daftarkan ke Window)
+        // UI HELPERS
         // ==========================================
         
         window.createSkeletonCard = () => `
@@ -207,9 +216,18 @@
                 sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border text-[8px] ${sCol}">${file.sifat.toUpperCase()}</span>`;
             }
 
+            // Tombol AI Scan khusus untuk file dari Google Drive yang belum memiliki Atribut OCR
+            let aiButton = '';
+            if (tipe !== 'link' && tipe !== 'link-2' && !file.noSurat && file.id) {
+                aiButton = `
+                <button onclick="scanDriveFile('${file.id}', '${file.nama}', '${file.url}', event)" class="mt-2 text-[9px] bg-monster/10 text-monster border border-monster/20 px-2 py-1.5 rounded-md hover:bg-monster hover:text-darkBg flex items-center gap-1 transition-all shadow-[0_0_10px_rgba(57,255,20,0.1)] w-max">
+                    <i data-lucide="brain-circuit" class="w-3 h-3"></i> Ekstrak Data dengan AI
+                </button>`;
+            }
+
             return `
                 <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
-                    <div class="flex items-start gap-3.5 overflow-hidden w-full">
+                    <div class="flex items-start gap-3.5 overflow-hidden w-full relative">
                         <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
@@ -219,6 +237,7 @@
                             <!-- Atribut Surat Dinamis -->
                             ${file.noSurat ? `<p class="text-[9px] text-slate-400 mt-1 font-medium italic truncate">No: ${file.noSurat}</p>` : ''}
                             ${file.hal ? `<p class="text-[9px] text-slate-400 truncate">Hal: ${file.hal}</p>` : ''}
+                            ${file.yth ? `<p class="text-[9px] text-slate-400 truncate">Yth: ${file.yth}</p>` : ''}
 
                             <div class="flex items-center flex-wrap gap-2 mt-1.5 text-[8px] text-slate-500 font-bold uppercase">
                                 <span>${file.tanggal || '-'}</span>
@@ -226,6 +245,7 @@
                                 <span class="text-monster/80">${file.kategori || 'FILE'}</span>
                                 ${sifatBadge}
                             </div>
+                            ${aiButton}
                         </div>
                     </div>
                 </div>`;
@@ -274,7 +294,6 @@
                 window.isLoading = false;
                 window.updateMergedData();
             }, (err) => {
-                if(err.message.includes('permission_denied')) window.showToast("⚠️ Database Terkunci (Check Rules)", "error");
                 window.isLoading = false;
                 window.updateMergedData();
             });
@@ -286,16 +305,16 @@
         }
 
         // ==========================================
-        // AI OCR ENGINE (GEMINI)
+        // AI OCR ENGINE BACKEND (Aman dari Hackers)
         // ==========================================
         
         window.runAIOCR = async () => {
             const fInput = document.getElementById('fileInput');
-            if(!fInput.files[0]) return window.showToast("Pilih file gambar surat dulu!", "error");
+            if(!fInput.files[0]) return window.showToast("Pilih file gambar/surat dulu!", "error");
 
             const btn = document.getElementById('btnAI');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Membaca Surat...`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Server AI Membaca...`;
             btn.disabled = true;
             lucide.createIcons();
 
@@ -304,51 +323,89 @@
                 const base64 = await toBase64(file);
                 const base64Data = base64.split(',')[1];
 
-                const prompt = `Analisis gambar surat ini. Ekstrak data berikut dalam format JSON: 
-                - noSurat (Nomor Surat)
-                - sifat (Penting/Biasa/Rahasia)
-                - hal (Perihal surat secara lengkap)
-                - yth (Tujuan surat/Kepada Yth)
-                - tanggal (Tanggal surat ditemukan dalam format DD MMM YYYY)
-                Jika tidak ditemukan, biarkan string kosong. Kembalikan HANYA JSON.`;
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+                // Memanggil Backend GAS untuk memproses OCR secara tertutup
+                const response = await fetch(GAS_API_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "text/plain" },
                     body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: prompt },
-                                { inlineData: { mimeType: file.type, data: base64Data } }
-                            ]
-                        }]
+                        action: 'scan',
+                        mimeType: file.type,
+                        fileData: base64Data
                     })
                 });
 
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                // Bersihkan string JSON dari markdown jika ada
-                const jsonStr = text.replace(/```json|```/g, "").trim();
-                const data = JSON.parse(jsonStr);
-
-                // Auto-Fill Form
-                if(data.noSurat) document.getElementById('docNoSurat').value = data.noSurat;
-                if(data.sifat) document.getElementById('docSifat').value = data.sifat;
-                if(data.hal) document.getElementById('docHal').value = data.hal;
-                if(data.yth) document.getElementById('docYth').value = data.yth;
-                if(data.tanggal) document.getElementById('docDate').value = data.tanggal;
-
-                window.showToast("✨ AI Berhasil Membaca Isi Surat!");
+                const res = await response.json();
+                if(res.status === 'success' && res.data) {
+                    const data = res.data;
+                    // Auto-Fill Form
+                    if(data.noSurat) document.getElementById('docNoSurat').value = data.noSurat;
+                    if(data.sifat) document.getElementById('docSifat').value = data.sifat;
+                    if(data.hal) document.getElementById('docHal').value = data.hal;
+                    if(data.yth) document.getElementById('docYth').value = data.yth;
+                    if(data.tanggal) document.getElementById('docDate').value = data.tanggal;
+                    window.showToast("✨ AI Berhasil Membaca Isi Surat!");
+                } else {
+                    throw new Error("Gagal mengambil data AI");
+                }
             } catch (e) {
                 console.error(e);
-                window.showToast("⚠️ AI Gagal Membaca (Gunakan Input Manual)", "error");
+                window.showToast("⚠️ AI Server Sibuk (Ketik Manual)", "error");
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 lucide.createIcons();
             }
         };
+
+        // Memindai File Langsung Dari Google Drive
+        window.scanDriveFile = async (fileId, fileName, fileUrl, e) => {
+            e.stopPropagation(); // Mencegah file terbuka saat tombol diklik
+            if(!fileId || fileId === 'undefined') return window.showToast("⚠️ ID File tidak ditemukan di Drive", "error");
+            
+            window.showToast("🤖 AI Server sedang memindai dokumen...", "success");
+            
+            try {
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify({ action: 'scanDrive', fileId: fileId })
+                });
+                
+                const res = await response.json();
+                if(res.status === 'success' && res.data) {
+                    const data = res.data;
+                    const dateStr = data.tanggal || new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    
+                    let cat = 'FILE';
+                    const halL = (data.hal || '').toLowerCase();
+                    if(halL.includes('sk') || halL.includes('keputusan')) cat = 'SK';
+                    else if(halL.includes('tugas') || halL.includes('st ')) cat = 'SURAT TUGAS';
+                    
+                    // Simpan hasil pindaian ke Firebase sebagai metadata permanen
+                    await window.firebaseSave({
+                        nama: fileName, 
+                        tipe: fileName.split('.').pop().toLowerCase(), 
+                        ukuran: 'Diindeks AI OCR', 
+                        kategori: cat, 
+                        noSurat: data.noSurat || '',
+                        sifat: data.sifat || 'Biasa',
+                        hal: data.hal || '',
+                        yth: data.yth || '',
+                        url: fileUrl, 
+                        tanggal: dateStr, 
+                        createdAt: serverTimestamp()
+                    });
+                    
+                    window.showToast("✅ " + fileName + " berhasil di-indeks AI!");
+                    window.fetchData();
+                } else {
+                    throw new Error(res.message || "Gagal OCR");
+                }
+            } catch (err) { 
+                console.error(err);
+                window.showToast("⚠️ File di Drive tidak terbaca oleh AI", "error"); 
+            }
+        }
 
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -384,7 +441,7 @@
                         <div class="flex items-end gap-3 mt-2">
                             <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
                             <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
-                                <i data-lucide="zap" class="w-3 h-3 mr-1"></i> AI SIKD Aktif
+                                <i data-lucide="zap" class="w-3 h-3 mr-1"></i> SIKD Auto-OCR Server
                             </span>
                         </div>
                     </div>
@@ -433,9 +490,9 @@
                                 <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Pilih Berkas / Foto Surat</p>
                             </div>
 
-                            <!-- TOMBOL AI OCR -->
+                            <!-- TOMBOL AI OCR BACKEND -->
                             <button type="button" id="btnAI" onclick="runAIOCR()" class="w-full bg-slate-800 border border-monster/30 hover:border-monster text-monster text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
-                                <i data-lucide="wand-2" class="w-4 h-4"></i> Baca Isi Surat dengan AI Gemini
+                                <i data-lucide="wand-2" class="w-4 h-4"></i> Baca Isi Surat dengan AI Server
                             </button>
                             
                             <div class="grid grid-cols-2 gap-3">
@@ -445,7 +502,7 @@
                                 </select>
                             </div>
 
-                            <!-- ATRIBUT SURAT (AI RESULTS) -->
+                            <!-- ATRIBUT SURAT -->
                             <div class="bg-slate-800/30 p-4 rounded-2xl border border-slate-700/50 space-y-4">
                                 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hasil Scan / Atribut Surat</p>
                                 <div class="grid grid-cols-2 gap-3">
@@ -496,13 +553,14 @@
         };
 
         window.renderSettings = () => {
+            const savedLink = localStorage.getItem('driveFolderUrl') || DEFAULT_DRIVE_FOLDER;
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2">
                     <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Pengaturan Sistem</h2>
                     <div class="glass p-6 rounded-3xl space-y-6">
                         <div class="flex items-center gap-4 p-4 rounded-2xl border border-monster/30 bg-monster/5">
                             <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cpu" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm font-bold">Mesin AI & SIKD Aktif</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Pemindaian Isi Surat Tersedia</p></div>
+                            <div><p class="text-sm font-bold">Mesin AI SIKD Aktif</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Berjalan di Server Google (Aman)</p></div>
                         </div>
                         <div class="border-t border-slate-700/50 pt-5 space-y-3">
                             <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Folder Google Drive</h3>
@@ -521,6 +579,15 @@
         // ==========================================
 
         window.navigate = function(view) {
+            // FITUR KEAMANAN: Kunci Menu Sistem dengan Password
+            if (view === 'settings') {
+                const pass = prompt("Masukkan Password Akses Sistem:");
+                if (pass !== "admin123") {
+                    window.showToast("⚠️ Password Salah! Akses Ditolak.", "error");
+                    return;
+                }
+            }
+
             document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('text-monster'); btn.classList.add('text-slate-400'); });
             const act = document.getElementById(`nav-${view}`);
             if(act) { act.classList.remove('text-slate-400'); act.classList.add('text-monster'); }
@@ -628,10 +695,26 @@
 
         window.showToast = (msg, type = 'success') => {
             const t = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
             document.getElementById('toast-msg').innerText = msg;
+            
+            if(type === 'error') {
+                t.classList.remove('bg-monster');
+                t.classList.add('bg-red-500', 'text-white');
+                icon.setAttribute('data-lucide', 'alert-circle');
+            } else {
+                t.classList.remove('bg-red-500');
+                t.classList.add('bg-monster', 'text-darkBg');
+                icon.setAttribute('data-lucide', 'check-circle');
+            }
+            lucide.createIcons();
+
             t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
             t.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'); t.classList.remove('opacity-100', 'translate-y-0'); }, 3000);
+            setTimeout(() => { 
+                t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'); 
+                t.classList.remove('opacity-100', 'translate-y-0'); 
+            }, 3000);
         };
 
         window.onload = () => window.fetchData();
