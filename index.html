@@ -88,14 +88,14 @@
                     <h1 class="text-2xl md:text-3xl font-bold text-white tracking-wide">E-<span class="text-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">Arsip</span></h1>
                     <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - Tapin Selatan</p>
                 </div>
-                <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800">
+                <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
                     <i data-lucide="user" class="text-monster w-5 h-5"></i>
                 </div>
             </div>
         </header>
 
         <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav fade-in scroll-smooth">
-            <!-- Content render by JS -->
+            <!-- Konten render by JS -->
         </main>
 
         <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
@@ -128,7 +128,7 @@
     </div>
 
     <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-monster text-darkBg px-4 py-2.5 rounded-xl font-bold shadow-lg opacity-0 translate-y-[-20px] pointer-events-none z-50 flex items-center gap-2 text-sm w-max transition-all duration-300">
-        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5"></i>
         <span id="toast-msg">Berhasil!</span>
     </div>
 
@@ -137,7 +137,7 @@
         import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // ==========================================
-        // 1. CONFIG FIREBASE & GAS (USER DATA)
+        // 1. DATA KONFIGURASI USER
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCCWghHoB-YWITU1eWxWhEYODjuPzVgbl4",
@@ -156,7 +156,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Global States
+        // State Global
         window.dataArsip = [];
         window.firebaseData = [];
         window.gasData = [];
@@ -164,9 +164,9 @@
         window.activeUploadMode = 'file';
 
         // ==========================================
-        // UI HELPERS (Didefinisikan di awal agar tidak Error)
+        // UI HELPERS
         // ==========================================
-
+        
         window.createSkeletonCard = () => `
             <div class="glass p-3.5 rounded-2xl flex items-center border border-transparent animate-pulse w-full mb-3">
                 <div class="w-10 h-10 rounded-xl bg-slate-700/50 shrink-0"></div>
@@ -186,13 +186,24 @@
 
         window.createFileCard = (file) => {
             let icon = 'file-text'; let color = 'text-slate-400'; let bg = 'bg-slate-700';
-            const tipe = file.tipe ? file.tipe.toLowerCase() : '';
+            const tipe = (file.tipe || 'file').toLowerCase();
+            
             if(tipe === 'pdf') { color = 'text-red-400'; bg = 'bg-red-400/10'; }
             else if(['doc', 'docx'].includes(tipe)) { color = 'text-blue-400'; bg = 'bg-blue-400/10'; }
             else if(['xls', 'xlsx', 'csv'].includes(tipe)) { icon = 'table'; color = 'text-green-400'; bg = 'bg-green-400/10'; }
             else if(['ppt', 'pptx'].includes(tipe)) { icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-400/10'; }
-            else if(['jpg', 'jpeg', 'png'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
+            else if(['jpg', 'jpeg', 'png', 'image'].includes(tipe)) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-400/10'; }
             else if(['html', 'url', 'link', 'link-2'].includes(tipe)) { icon = 'link-2'; color = 'text-cyan-400'; bg = 'bg-cyan-400/10'; }
+
+            // Logika Warna Label Sifat
+            let sifatBadge = '';
+            if(file.sifat) {
+                const sifatL = file.sifat.toLowerCase();
+                let sColor = 'bg-slate-600 border-slate-500 text-slate-200';
+                if(sifatL.includes('penting')) sColor = 'bg-orange-500/20 border-orange-500/40 text-orange-400';
+                if(sifatL.includes('rahasia')) sColor = 'bg-red-500/20 border-red-500/40 text-red-400';
+                sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border ${sColor}">${file.sifat}</span>`;
+            }
 
             return `
                 <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
@@ -202,10 +213,17 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="font-bold text-sm text-slate-100 break-words leading-snug group-hover:text-monster transition-colors">${file.nama}</h3>
+                            
+                            <!-- Metadata Tambahan (Atribut Surat) -->
+                            ${file.noSurat ? `<p class="text-[10px] text-slate-300 mt-1 truncate"><span class="text-slate-500 font-medium">No:</span> ${file.noSurat}</p>` : ''}
+                            ${file.hal ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Hal:</span> ${file.hal}</p>` : ''}
+                            ${file.yth ? `<p class="text-[10px] text-slate-300 truncate"><span class="text-slate-500 font-medium">Yth:</span> ${file.yth}</p>` : ''}
+
                             <div class="flex items-center flex-wrap gap-2 mt-1.5 text-[9px] text-slate-400 font-medium uppercase">
                                 <span>${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span class="text-monster/90 border border-monster/20 bg-monster/5 px-1.5 py-0.5 rounded-md">${file.kategori || 'FILE'}</span>
+                                ${sifatBadge}
                             </div>
                         </div>
                     </div>
@@ -219,9 +237,7 @@
         window.updateMergedData = function() {
             const mergedMap = new Map();
             
-            // 1. Sinkronkan dari GAS (Google Drive)
             window.gasData.forEach(item => {
-                // Normalisasi kategori dari format GAS ke format sistem
                 let rawCat = (item.kategori || 'Umum').toUpperCase();
                 if (rawCat.includes('SK')) item.kategori = 'SK';
                 else if (rawCat.includes('TUGAS')) item.kategori = 'SURAT TUGAS';
@@ -229,16 +245,11 @@
                 else if (rawCat.includes('KEUANGAN')) item.kategori = 'KEUANGAN';
                 else if (rawCat.includes('PEGAWAI')) item.kategori = 'KEPEGAWAIAN';
                 else item.kategori = 'FILE';
-                
                 mergedMap.set(item.nama, item); 
             });
 
-            // 2. Sinkronkan dari Firebase
-            window.firebaseData.forEach(item => {
-                mergedMap.set(item.nama, item); 
-            });
+            window.firebaseData.forEach(item => mergedMap.set(item.nama, item));
             
-            // 3. Gabung dan Urutkan
             window.dataArsip = Array.from(mergedMap.values()).sort((a, b) => {
                 const tA = a.createdAt ? (typeof a.createdAt === 'number' ? a.createdAt : 0) : (Date.parse(a.tanggal) || 0);
                 const tB = b.createdAt ? (typeof b.createdAt === 'number' ? b.createdAt : 0) : (Date.parse(b.tanggal) || 0);
@@ -253,7 +264,6 @@
         window.fetchData = function() {
             window.isLoading = true;
             
-            // Fetch Firebase
             onValue(ref(db, 'arsip'), (snapshot) => {
                 let temp = [];
                 snapshot.forEach((snap) => temp.push({ id: snap.key, ...snap.val() }));
@@ -262,35 +272,28 @@
                 window.updateMergedData();
             }, (err) => {
                 if(err.message.includes('permission_denied')) {
-                    window.showToast("⚠️ Database Firebase Terkunci");
-                    console.error("Rules Error: Atur Rules Realtime Database menjadi .read: true dan .write: true");
+                    window.showToast("⚠️ Database Firebase Terkunci", "error");
                 }
                 window.isLoading = false;
                 window.updateMergedData();
             });
 
-            // Fetch Google Drive via GAS
-            fetch(GAS_API_URL)
-                .then(res => res.json())
-                .then(res => {
-                    if(Array.isArray(res)) window.gasData = res;
-                    window.updateMergedData();
-                })
-                .catch(e => {
-                    console.error("GAS Fetch Fail", e);
-                    window.updateMergedData();
-                });
+            fetch(GAS_API_URL).then(res => res.json()).then(res => {
+                if(Array.isArray(res)) window.gasData = res;
+                window.updateMergedData();
+            }).catch(e => {
+                window.updateMergedData();
+            });
         }
 
         // ==========================================
-        // HALAMAN-HALAMAN RENDERER
+        // RENDERER HALAMAN
         // ==========================================
 
         window.renderDashboard = function() {
             const cts = { 'SK': 0, 'SURAT TUGAS': 0, 'LAPORAN': 0, 'KEUANGAN': 0, 'KEPEGAWAIAN': 0, 'FILE': 0 };
             window.dataArsip.forEach(f => {
                 let c = (f.kategori || 'FILE').toUpperCase();
-                // Normalisasi hitungan agar sesuai chips
                 if(c.includes('SK')) cts['SK']++;
                 else if(c.includes('TUGAS')) cts['SURAT TUGAS']++;
                 else if(c.includes('LAPORAN')) cts['LAPORAN']++;
@@ -300,7 +303,7 @@
             });
 
             const statsChips = Object.keys(cts).map(k => `
-                <div onclick="filterFiles('${k.toLowerCase()}')" class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl min-w-max flex items-center gap-2 cursor-pointer transition-all hover:border-monster">
+                <div onclick="filterFiles('${k.toLowerCase()}')" class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl min-w-max flex items-center gap-2 cursor-pointer transition-all hover:border-monster shadow-sm">
                     <span class="text-[10px] font-bold text-slate-300 uppercase">${k}</span>
                     <span class="bg-monster/10 text-monster text-[10px] px-1.5 py-0.5 rounded-md font-bold">${cts[k]}</span>
                 </div>`).join('');
@@ -315,7 +318,7 @@
                         <div class="flex items-end gap-3 mt-2">
                             <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
                             <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
-                                <i data-lucide="radio" class="w-3 h-3 mr-1 animate-pulse"></i> Sync: Drive + Firebase
+                                <i data-lucide="radio" class="w-3 h-3 mr-1 animate-pulse"></i> Sync: Realtime Active
                             </span>
                         </div>
                     </div>
@@ -327,7 +330,9 @@
                         ${window.createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10', 'xls')}
                         ${window.createCategoryBtn('link-2', 'Tautan', 'text-cyan-400', 'bg-cyan-400/10', 'link')}
                     </div>
-                    <h3 class="text-base font-bold text-white mb-4">Arsip Terbaru</h3>
+                    <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-5 h-5 text-monster"></i> Berkas Terbaru
+                    </h3>
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">${recentList}</div>
                 </div>`;
             lucide.createIcons();
@@ -338,8 +343,8 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2 h-full flex flex-col">
                     <div class="relative mb-6">
-                        <input type="text" id="searchInput" placeholder="Cari nama, kategori, jenis..." class="w-full glass-input rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner" onkeyup="handleSearch()">
-                        <i data-lucide="search" class="absolute left-4 top-3.5 text-monster/70 w-5 h-5"></i>
+                        <input type="text" id="searchInput" placeholder="Cari nama, No Surat, perihal, kategori..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner" onkeyup="handleSearch()">
+                        <i data-lucide="search" class="absolute left-4 top-4 text-monster/70 w-5 h-5"></i>
                     </div>
                     <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">${list}</div>
                 </div>`;
@@ -348,36 +353,77 @@
 
         window.renderInput = function() {
             document.getElementById('app-content').innerHTML = `
-                <div class="fade-in pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Input Arsip</h2>
-                    <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50">
-                        <button onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg">File Fisik</button>
-                        <button onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400">Tautan Link</button>
+                <div class="fade-in pt-2 pb-6">
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Input Arsip PKH</h2>
+                    <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 shadow-inner">
+                        <button onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all">File Fisik</button>
+                        <button onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 transition-all">Tautan Link</button>
                     </div>
                     <form id="uploadForm" onsubmit="handleUpload(event)" class="space-y-5">
+                        
+                        <!-- TAB FILE FISIK -->
                         <div id="mode-file" class="space-y-5">
-                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group">
+                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group">
                                 <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileChange(this)">
-                                <i data-lucide="folder-up" class="w-8 h-8 text-slate-400 mx-auto mb-3"></i>
-                                <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Pilih file PDF, Word, atau Excel</p>
+                                <i data-lucide="folder-up" class="w-10 h-10 text-slate-400 mx-auto mb-3 group-hover:text-monster transition-colors"></i>
+                                <p class="text-sm text-slate-300 font-medium" id="fileNameDisplay">Ketuk untuk memilih file Berkas</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="text" id="docName" readonly placeholder="Nama File" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-400 cursor-not-allowed">
-                                <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-monster font-bold">
-                                    <option value="FILE">FILE</option><option value="SK">SK</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="KEUANGAN">KEUANGAN</option><option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
-                                </select>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Nama File (Auto)</label>
+                                    <input type="text" id="docName" readonly placeholder="Auto..." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-400 cursor-not-allowed">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Kategori Utama</label>
+                                    <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-monster font-bold focus:outline-none">
+                                        <option value="FILE">FILE</option><option value="SK">SK</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="KEUANGAN">KEUANGAN</option><option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- ATRIBUT SURAT BARU -->
+                            <div class="border-t border-slate-700/50 pt-4 mt-4 space-y-4">
+                                <p class="text-[11px] font-bold text-monster uppercase flex items-center gap-1.5"><i data-lucide="text-quote" class="w-3.5 h-3.5"></i> Atribut Surat (Opsional)</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="text" id="docNoSurat" placeholder="Nomor Surat" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
+                                    <select id="docSifat" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-300 font-bold focus:outline-none">
+                                        <option value="">-- Sifat Surat --</option>
+                                        <option value="Biasa">Biasa</option>
+                                        <option value="Penting">Penting</option>
+                                        <option value="Rahasia">Rahasia</option>
+                                        <option value="Sangat Rahasia">Sangat Rahasia</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="text" id="docHal" placeholder="Perihal / Hal" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
+                                    <input type="text" id="docYth" placeholder="Tujuan / Yth." class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-monster/50">
+                                </div>
                             </div>
                         </div>
+
+                        <!-- TAB TAUTAN LINK -->
                         <div id="mode-link" class="hidden space-y-5">
-                            <input type="url" id="linkUrl" placeholder="https://docs.google.com/spreadsheet/..." class="w-full glass-input rounded-xl py-3.5 px-4 text-sm text-white" oninput="autoDetectLink(this.value)">
+                            <div class="space-y-1">
+                                <label class="text-[10px] text-slate-500 font-bold ml-1 uppercase">Link Spreadsheet / Drive</label>
+                                <input type="url" id="linkUrl" placeholder="https://docs.google.com/..." class="w-full glass-input rounded-xl py-4 px-4 text-sm text-white" oninput="autoDetectLink(this.value)">
+                            </div>
                             <div class="grid grid-cols-2 gap-4">
-                                <input type="text" id="linkName" placeholder="Judul Tautan" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-sm text-white uppercase font-bold">
-                                <select id="linkCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-monster font-bold">
-                                    <option value="DATA">DATA</option><option value="FILE">FILE</option><option value="SK">SK</option><option value="LAPORAN">LAPORAN</option>
-                                </select>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-slate-500 font-bold ml-1 uppercase">Judul Tautan</label>
+                                    <input type="text" id="linkName" placeholder="Contoh: DATA PKH 2026" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-sm text-white uppercase font-bold">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] text-slate-500 font-bold ml-1 uppercase">Kategori</label>
+                                    <select id="linkCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-xs text-monster font-bold">
+                                        <option value="DATA">DATA</option><option value="FILE">FILE</option><option value="SK">SK</option><option value="LAPORAN">LAPORAN</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/30">Simpan ke Database</button>
+                        <button type="submit" id="btnSubmit" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip Lengkap
+                        </button>
                     </form>
                 </div>`;
             lucide.createIcons();
@@ -388,19 +434,20 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2">
                     <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="folder-kanban" class="text-monster w-5 h-5"></i> Database Terpadu</h2>
-                    <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center">
+                    <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-md">
                         <div class="flex items-center gap-3">
                             <div class="p-2.5 bg-monster/10 rounded-xl border border-monster/20 text-monster"><i data-lucide="database" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm text-white font-bold">Sinkronisasi Realtime</p><p class="text-[10px] text-slate-400 uppercase tracking-widest">${window.dataArsip.length} Dokumen Terdeteksi</p></div>
+                            <div><p class="text-sm text-white font-bold leading-tight">Sinkronisasi Realtime</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Terdeteksi</p></div>
                         </div>
-                        <button onclick="fetchData()" class="p-2.5 text-slate-400 hover:text-monster transition-all"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                        <button onclick="fetchData()" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
                     </div>
-                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">${list}</div>
+                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
             lucide.createIcons();
         };
 
         window.renderSettings = () => {
+            const savedLink = localStorage.getItem('driveFolderUrl') || DEFAULT_DRIVE_FOLDER;
             document.getElementById('app-content').innerHTML = `
                 <div class="fade-in pt-2">
                     <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Pengaturan</h2>
@@ -410,10 +457,10 @@
                             <div><p class="text-sm font-bold">Firebase Realtime Live</p><p class="text-[10px] text-slate-400 uppercase">PKH Tapin - PKH Tapin Selatan</p></div>
                         </div>
                         <div class="border-t border-slate-700/50 pt-5 space-y-3">
-                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Link Folder Google Drive</h3>
+                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Utama Folder Google Drive</h3>
                             <div class="flex gap-2">
-                                <input type="url" readonly value="${DEFAULT_DRIVE_FOLDER}" class="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 text-xs text-slate-400 outline-none">
-                                <button onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-2.5 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-all"><i data-lucide="external-link" class="w-5 h-5"></i></button>
+                                <input type="url" readonly value="${DEFAULT_DRIVE_FOLDER}" class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-xs text-slate-400 outline-none">
+                                <button onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-3 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-all shadow-lg shadow-monster/10"><i data-lucide="external-link" class="w-5 h-5"></i></button>
                             </div>
                         </div>
                     </div>
@@ -456,8 +503,8 @@
         window.switchUploadMode = (m) => {
             window.activeUploadMode = m;
             const isF = m === 'file';
-            document.getElementById('tab-file').className = isF ? "flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg" : "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
-            document.getElementById('tab-link').className = !isF ? "flex-1 py-2.5 text-xs font-bold rounded-lg bg-monster text-darkBg" : "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
+            document.getElementById('tab-file').className = isF ? "flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all" : "flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+            document.getElementById('tab-link').className = !isF ? "flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all" : "flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
             document.getElementById('mode-file').classList.toggle('hidden', !isF);
             document.getElementById('mode-link').classList.toggle('hidden', isF);
         };
@@ -470,6 +517,7 @@
         window.handleUpload = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
+            const originalContent = btn.innerHTML;
             btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto"></i>`;
             btn.disabled = true;
             lucide.createIcons();
@@ -482,6 +530,12 @@
                     const file = fInput.files[0];
                     if(!file) throw new Error("Pilih berkas!");
                     
+                    // Ekstraksi Atribut Surat
+                    const noSurat = document.getElementById('docNoSurat')?.value || '';
+                    const sifat = document.getElementById('docSifat')?.value || '';
+                    const hal = document.getElementById('docHal')?.value || '';
+                    const yth = document.getElementById('docYth')?.value || '';
+                    
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         fetch(GAS_API_URL, { 
@@ -493,29 +547,51 @@
                         .then(async res => {
                             if(res.status === 'success') {
                                 await push(ref(db, "arsip"), { 
-                                    nama: file.name, tipe: file.name.split('.').pop().toLowerCase(), 
+                                    nama: file.name, 
+                                    tipe: file.name.split('.').pop().toLowerCase(), 
                                     ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB", 
                                     kategori: document.getElementById('docCategory').value, 
-                                    url: res.url, tanggal: dateStr, createdAt: serverTimestamp() 
+                                    noSurat: noSurat,
+                                    sifat: sifat,
+                                    hal: hal,
+                                    yth: yth,
+                                    url: res.url, 
+                                    tanggal: dateStr, 
+                                    createdAt: serverTimestamp() 
                                 });
-                                window.showToast('Berkas Berhasil Disimpan!'); window.fetchData();
-                            } else { window.showToast("⚠️ GAS Gagal"); }
-                        }).catch(() => window.showToast("⚠️ Jaringan Bermasalah")).finally(() => resetBtn());
+                                window.showToast('Berkas & Atribut Disimpan!'); 
+                                window.fetchData();
+                            } else { 
+                                window.showToast("⚠️ Simpan Drive Ditolak", "error"); 
+                            }
+                        })
+                        .catch(() => window.showToast("⚠️ Masalah Jaringan GAS", "error"))
+                        .finally(() => resetBtn());
                     };
                     reader.readAsDataURL(file);
                 } else {
                     const name = document.getElementById('linkName').value;
                     const url = document.getElementById('linkUrl').value;
-                    if(!name || !url) throw new Error("Isi data tautan!");
+                    if(!name || !url) throw new Error("Lengkapi data tautan!");
+                    
                     await push(ref(db, "arsip"), { 
-                        nama: name, tipe: 'link', ukuran: 'Akses Web', 
+                        nama: name.toUpperCase(), 
+                        tipe: 'link', 
+                        ukuran: 'Akses Web', 
                         kategori: document.getElementById('linkCategory').value, 
-                        url: url, tanggal: dateStr, createdAt: serverTimestamp() 
+                        url: url, 
+                        tanggal: dateStr, 
+                        createdAt: serverTimestamp() 
                     });
-                    window.showToast('Tautan Berhasil!'); window.fetchData(); resetBtn();
+                    window.showToast('Tautan Berhasil Disimpan!'); 
+                    window.fetchData(); 
+                    resetBtn();
                 }
-            } catch(e) { window.showToast("⚠️ " + e.message); resetBtn(); }
-            function resetBtn() { btn.innerHTML = `Simpan ke Database`; btn.disabled = false; lucide.createIcons(); }
+            } catch(e) { 
+                window.showToast("⚠️ " + e.message, "error"); 
+                resetBtn(); 
+            }
+            function resetBtn() { btn.innerHTML = originalContent; btn.disabled = false; lucide.createIcons(); }
         };
 
         window.filterFiles = (q) => { 
@@ -527,17 +603,50 @@
             const i = document.getElementById('searchInput');
             if(!i) return;
             const q = i.value.toLowerCase();
-            const res = window.dataArsip.filter(f => f.nama.toLowerCase().includes(q) || (f.kategori && f.kategori.toLowerCase().includes(q)) || (f.tipe && f.tipe.toLowerCase().includes(q)));
-            document.getElementById('searchResults').innerHTML = res.length ? res.map(f => window.createFileCard(f)).join('') : `<div class="col-span-full text-center py-10 opacity-50"><p>Tidak ditemukan</p></div>`;
+            
+            // Upgrade fitur pencarian agar bisa mendeteksi No Surat, Hal, dan Yth
+            const res = window.dataArsip.filter(f => 
+                f.nama.toLowerCase().includes(q) || 
+                (f.kategori && f.kategori.toLowerCase().includes(q)) || 
+                (f.tipe && f.tipe.toLowerCase().includes(q)) ||
+                (f.noSurat && f.noSurat.toLowerCase().includes(q)) ||
+                (f.hal && f.hal.toLowerCase().includes(q)) ||
+                (f.yth && f.yth.toLowerCase().includes(q))
+            );
+            
+            const container = document.getElementById('searchResults');
+            if(container) container.innerHTML = res.length ? res.map(f => window.createFileCard(f)).join('') : `<div class="col-span-full text-center py-10 opacity-50"><p>Dokumen tidak ditemukan</p></div>`;
             lucide.createIcons();
         };
 
-        window.showToast = (msg) => {
+        window.showToast = (msg, type = 'success') => {
             const t = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
             document.getElementById('toast-msg').innerText = msg;
+            
+            if(type === 'error') {
+                t.classList.remove('bg-monster');
+                t.classList.add('bg-red-500', 'text-white');
+                icon.setAttribute('data-lucide', 'alert-circle');
+            } else {
+                t.classList.remove('bg-red-500');
+                t.classList.add('bg-monster', 'text-darkBg');
+                icon.setAttribute('data-lucide', 'check-circle');
+            }
+            lucide.createIcons();
+
             t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
             t.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none'); t.classList.remove('opacity-100', 'translate-y-0'); }, 3000);
+            setTimeout(() => { 
+                t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
+                t.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        };
+
+        window.saveDriveLink = (u) => localStorage.setItem('driveFolderUrl', u);
+        window.openDriveLink = () => { 
+            const u = localStorage.getItem('driveFolderUrl') || DEFAULT_DRIVE_FOLDER;
+            window.open(u, '_blank'); 
         };
 
         window.onload = () => window.fetchData();
