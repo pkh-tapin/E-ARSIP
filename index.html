@@ -95,12 +95,7 @@
             </div>
         </header>
 
-        <!-- Indikator Auto-Sync Latar Belakang AI -->
-        <div id="sync-indicator" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-monster/30 text-white px-4 py-2 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(57,255,20,0.2)] flex items-center gap-2 hidden z-40 transition-all opacity-95">
-            <i data-lucide="bot" class="w-4 h-4 text-monster animate-bounce"></i>
-            <span id="sync-status-text">AI Membaca Dokumen Baru...</span>
-        </div>
-
+        <!-- AREA KONTEN UTAMA -->
         <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav fade-in-once scroll-smooth">
             <!-- Content render by JS -->
         </main>
@@ -238,6 +233,7 @@
                 <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
             </button>`;
 
+        // IKON FORMAT FILE OTOMATIS
         window.createFileCard = (file) => {
             let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700/30 border border-slate-600';
             const tipe = String(file.tipe || '').toLowerCase();
@@ -289,22 +285,15 @@
         };
 
         // ==========================================
-        // AUTO-SYNC & AI BACKGROUND PROCESSOR 
+        // AUTO-SYNC & AI BACKGROUND (100% SILENT/SILUMAN)
         // ==========================================
         
         window.runBackgroundSync = async function() {
             if(window.isSyncing || window.syncQueue.length === 0) return;
-            
             window.isSyncing = true;
             
-            const syncInd = document.getElementById('sync-indicator');
-            const syncText = document.getElementById('sync-status-text');
-            if(syncInd) syncInd.classList.remove('hidden');
-
             while(window.syncQueue.length > 0) {
                 const file = window.syncQueue.shift();
-                if(syncText) syncText.innerText = `AI Membaca: ${file.nama.substring(0,10)}...`;
-
                 let finalData = { ...file }; 
 
                 try {
@@ -333,25 +322,24 @@
                         }
                     }
                 } catch (e) {
-                    console.warn("AI Skip File Timeout:", file.nama);
+                    console.warn("AI Timeout File:", file.nama);
                 }
 
+                // Fallback (Anti-Undefined)
                 finalData.noSurat = finalData.noSurat || '';
                 finalData.sifat = finalData.sifat || 'Biasa';
                 finalData.hal = finalData.hal || file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
                 finalData.yth = finalData.yth || '';
                 finalData.tanggalSurat = finalData.tanggalSurat || file.tanggal;
 
-                // SIMPAN PERMANEN KE FIREBASE (1X BACA)
+                // SIMPAN PERMANEN KE FIREBASE
                 await window.firebaseSave(finalData);
 
-                // Jeda Ramah API Google
-                await new Promise(r => setTimeout(r, 1000));
+                // Jeda 1.5 detik
+                await new Promise(r => setTimeout(r, 1500));
             }
             
             window.isSyncing = false;
-            if(syncInd) syncInd.classList.add('hidden');
-            
             window.updateMergedData(); 
         };
 
@@ -386,10 +374,10 @@
                 return tB - tA;
             });
 
+            // PROTEKSI SUPER: Hanya perbarui tampilan jika pengguna sedang di menu yang aman
             const activeNav = document.querySelector('.nav-btn.text-monster');
             const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
             
-            // HANYA RENDER ULANG JIKA DI MENU YANG AMAN
             if (!window.isSyncing && ['dashboard', 'search', 'drive'].includes(view)) {
                 if (view === 'dashboard') window.renderDashboard();
                 else if (view === 'search') window.renderSearch();
@@ -401,7 +389,6 @@
             }
         };
 
-        // LOADING AWAL (INSTAN)
         window.fetchData = function(forceFetchDrive = false) {
             if(window.dataArsip.length === 0) {
                 window.isLoading = true; 
@@ -512,7 +499,7 @@
         };
 
         window.renderInput = function() {
-            // MENGGUNAKAN DIV BUKAN FORM AGAR 100% TIDAK REFRESH
+            // MENGHAPUS <FORM> SEPENUHNYA UNTUK MENCEGAH REFRESH / SUBMIT BAWAAN BROWSER
             document.getElementById('app-content').innerHTML = `
                 <div class="pt-2 pb-6">
                     <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Entri Data Baru</h2>
@@ -550,7 +537,7 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="button" id="btnSubmit" onclick="window.handleUpload()" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                        <button type="button" id="btnSubmit" onclick="window.handleUpload(event)" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
                             <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip 
                         </button>
                     </div>
@@ -662,8 +649,9 @@
             document.getElementById('linkCategory').value = (l.includes('sheets') || l.includes('excel')) ? 'DATA' : 'FILE';
         };
 
-        // FUNGSI UPLOAD YANG SUDAH DILINDUNGI PENUH DARI REFRESH
-        window.handleUpload = async () => {
+        window.handleUpload = async (e) => {
+            if(e) e.preventDefault(); // Mencegah segala bentuk submit
+            
             const btn = document.getElementById('btnSubmit');
             if(!btn) return;
             const originalContent = btn.innerHTML;
@@ -699,17 +687,17 @@
                             const res = await response.json();
                             
                             if(res.status === 'success') {
-                                window.showToast('Berkas Masuk! AI akan memindainya.'); 
+                                window.showToast('Berkas Terunggah! AI akan memindainya.'); 
                                 
-                                // Kosongkan Input Manual
+                                // Bersihkan Input secara Manual agar UI tidak reset
                                 document.getElementById('docName').value = '';
                                 document.getElementById('fileInput').value = '';
                                 document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
+                                document.getElementById('docCategory').value = 'FILE';
                                 
-                                // Trigger AI Latar Belakang agar membaca file baru ini
                                 window.fetchData(true); 
                             } else { 
-                                window.showToast("⚠️ Gagal menyimpan ke Drive", "error"); 
+                                window.showToast("⚠️ Gagal menyimpan", "error"); 
                             }
                         } catch (e) {
                             window.showToast("⚠️ Masalah Jaringan GAS", "error"); 
@@ -736,6 +724,8 @@
                     window.showToast('Tautan Berhasil Disimpan!'); 
                     document.getElementById('linkUrl').value = '';
                     document.getElementById('linkName').value = '';
+                    document.getElementById('linkCategory').value = 'DATA';
+                    
                     window.fetchData(true); 
                     resetBtn();
                 }
