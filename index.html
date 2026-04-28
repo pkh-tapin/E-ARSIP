@@ -178,26 +178,19 @@
         window.firebaseSave = async (payload) => {
             try { 
                  const safePayload = {
-                    driveId: payload.id || payload.driveId || '', // KUNCI UTAMA: Menyimpan ID unik dari Google Drive agar AI tidak memindai 2x
-                    nama: payload.nama || 'Tanpa Nama',
-                    tipe: payload.tipe || 'file',
-                    ukuran: payload.ukuran || '-',
-                    kategori: payload.kategori || 'FILE',
-                    noSurat: payload.noSurat || '',
-                    sifat: payload.sifat || 'Biasa',
-                    hal: payload.hal || '',
-                    yth: payload.yth || '',
-                    url: payload.url || '#',
-                    tanggal: payload.tanggalSurat || payload.tanggal || new Date().toLocaleDateString('id-ID'), 
+                    driveId: String(payload.id || payload.driveId || ''), // KUNCI UTAMA ANTI-LOOP
+                    nama: String(payload.nama || 'Tanpa Nama'),
+                    tipe: String(payload.tipe || 'file'),
+                    ukuran: String(payload.ukuran || '-'),
+                    kategori: String(payload.kategori || 'FILE'),
+                    noSurat: String(payload.noSurat || ''),
+                    sifat: String(payload.sifat || 'Biasa'),
+                    hal: String(payload.hal || ''),
+                    yth: String(payload.yth || ''),
+                    url: String(payload.url || '#'),
+                    tanggal: String(payload.tanggalSurat || payload.tanggal || new Date().toLocaleDateString('id-ID')), 
                     createdAt: serverTimestamp()
                 };
-
-                // PENGAMAN EKSTRA: Bersihkan undefined dari objek murni sebelum ke Firebase
-                Object.keys(safePayload).forEach(key => {
-                    if (safePayload[key] === undefined || safePayload[key] === null) {
-                        safePayload[key] = '';
-                    }
-                });
 
                 await push(ref(db, "arsip"), safePayload); 
             } catch(e) { console.error("Firebase Save Error:", e); }
@@ -228,12 +221,10 @@
             </button>`;
         };
 
-        // KARTU DOKUMEN DENGAN IKON FORMAT YANG SESUAI
         window.createFileCard = (file) => {
             let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700/30 border border-slate-600';
             const tipe = (file.tipe || 'file').toLowerCase();
             
-            // Ikon Format FIle
             if(tipe === 'pdf') { icon = 'file-text'; color = 'text-red-500'; bg = 'bg-red-500/10 border border-red-500/30'; }
             else if(['doc', 'docx'].includes(tipe)) { icon = 'file-text'; color = 'text-blue-500'; bg = 'bg-blue-500/10 border border-blue-500/30'; }
             else if(['xls', 'xlsx', 'csv'].includes(tipe)) { icon = 'table'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10 border border-emerald-500/30'; }
@@ -241,7 +232,6 @@
             else if(['jpg', 'jpeg', 'png', 'image'].includes(tipe)) { icon = 'image'; color = 'text-purple-500'; bg = 'bg-purple-500/10 border border-purple-500/30'; }
             else if(['html', 'url', 'link', 'link-2'].includes(tipe)) { icon = 'link-2'; color = 'text-cyan-500'; bg = 'bg-cyan-500/10 border border-cyan-500/30'; }
 
-            // Badge Sifat Surat
             let sifatBadge = '';
             if(file.sifat && file.sifat !== 'Biasa') {
                 const sL = file.sifat.toLowerCase();
@@ -256,7 +246,6 @@
             return `
                 <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
                     <div class="flex items-start gap-3.5 overflow-hidden w-full relative">
-                        <!-- Ikon Format File -->
                         <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
                             <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
@@ -296,45 +285,54 @@
                 const file = window.syncQueue.shift();
                 if(syncText) syncText.innerText = `AI Menganalisis: ${file.nama.substring(0,10)}...`;
 
+                let finalData = { ...file }; // Siapkan data cadangan (Fallback)
+
                 try {
-                    // Panggil Backend AI GAS
+                    // PENGAMAN 1: Timeout 25 Detik. Jika file kebesaran & Google hang, kita langsung lewati.
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 25000); 
+
                     const response = await fetch(GAS_API_URL, {
                         method: 'POST',
                         headers: { "Content-Type": "text/plain" },
-                        body: JSON.stringify({ action: 'scanDrive', fileId: file.id })
+                        body: JSON.stringify({ action: 'scanDrive', fileId: file.id }),
+                        signal: controller.signal
                     });
                     
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) throw new Error("HTTP Status " + response.status);
                     const res = await response.json();
-                    let finalData = { ...file };
 
-                    // Parse Data dari AI secara presisi
+                    // Parse Data dari AI Google Gemini secara presisi
                     if(res.status === 'success' && res.data && Object.keys(res.data).length > 0) {
                         const data = res.data;
                         finalData.noSurat = data.noSurat || '';
                         finalData.sifat = data.sifat || 'Biasa';
-                        finalData.hal = data.hal || '';
+                        finalData.hal = data.hal || file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
                         finalData.yth = data.yth || '';
                         finalData.tanggalSurat = data.tanggalSurat || file.tanggal; 
                         finalData.kategori = data.kategori || file.kategori;
                     } else {
-                        // Fallback Jika File bukan surat / AI gagal
-                        finalData.noSurat = '';
+                        // Fallback: AI gagal baca teks di dalam file
                         finalData.sifat = 'Biasa';
                         finalData.hal = file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-                        finalData.yth = '';
                         finalData.tanggalSurat = file.tanggal;
                     }
 
-                    // SIMPAN PERMANEN KE FIREBASE
-                    // Karena fungsi save ini sukses, ID-nya akan tercatat di Database dan tidak akan discan ulang besok
-                    await window.firebaseSave(finalData);
-
-                    // Jeda 2 detik antar pemindaian agar sistem API Google tidak memblokir (Rate Limit)
-                    await new Promise(r => setTimeout(r, 2000));
-                    
                 } catch (e) {
-                    console.error("Background Scan Error:", e);
+                    console.warn("AI Melewati File (Kebesaran/Timeout):", e);
+                    // PENGAMAN 2: Fallback saat jaringan putus/timeout, file tetap dicatat di database
+                    finalData.sifat = 'Biasa';
+                    finalData.hal = file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+                    finalData.tanggalSurat = file.tanggal;
                 }
+
+                // SIMPAN PERMANEN KE FIREBASE (File akan punya ID Drive dan tidak dipindai lagi)
+                await window.firebaseSave(finalData);
+
+                // Jeda 1 detik antar pemindaian agar sistem API Google tidak memblokir (Rate Limit)
+                await new Promise(r => setTimeout(r, 1000));
             }
             
             window.isSyncing = false;
@@ -345,7 +343,7 @@
             const mergedMap = new Map();
             const scannedDriveIds = new Set(); // KUNCI ANTI-SCAN BERULANG
             
-            // 1. Data Utama dari Database Firebase (Prioritas Tertinggi & Tercepat)
+            // 1. Data Utama dari Database Firebase
             window.firebaseData.forEach(item => {
                 mergedMap.set(item.nama, item);
                 if(item.driveId) scannedDriveIds.add(item.driveId); // Rekam ID file Drive yang SUDAH ADA di database
@@ -353,7 +351,7 @@
             
             // 2. Data dari Google Drive (HANYA MENCARI FILE BARU)
             window.gasData.forEach(item => {
-                // JIKA FILE BELUM ADA DI DATABASE (Berdasarkan ID Asli atau Nama File)
+                // JIKA FILE BELUM ADA DI DATABASE
                 if(!mergedMap.has(item.nama) && !scannedDriveIds.has(item.id)) {
                     
                     let cat = 'FILE';
@@ -364,21 +362,19 @@
 
                     mergedMap.set(item.nama, item); // Tampilkan file baru sementara di layar (Sambil menunggu AI)
                     
-                    // Masukkan ke Antrean AI untuk disingkronkan ke Firebase
+                    // Masukkan ke Antrean AI
                     if(!window.syncQueue.find(q => q.id === item.id)) {
                         window.syncQueue.push(item);
                     }
                 }
             });
             
-            // 3. Urutkan berdasarkan waktu terbaru
             window.dataArsip = Array.from(mergedMap.values()).sort((a, b) => {
                 const tA = a.createdAt ? (typeof a.createdAt === 'number' ? a.createdAt : 0) : (Date.parse(a.tanggal) || 0);
                 const tB = b.createdAt ? (typeof b.createdAt === 'number' ? b.createdAt : 0) : (Date.parse(b.tanggal) || 0);
                 return tB - tA;
             });
 
-            // Update UI
             const activeNav = document.querySelector('.nav-btn.text-monster');
             const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
             window.navigate(view);
@@ -392,7 +388,7 @@
             window.isLoading = true; 
             window.renderDashboard(); 
             
-            // 1. Ambil dari Firebase (0 Detik Loading - Mengambil data yang sudah di-scan permanen)
+            // 1. Ambil dari Firebase (0 Detik Loading)
             onValue(ref(db, 'arsip'), (snapshot) => {
                 let tempArr = [];
                 snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
@@ -402,7 +398,7 @@
                 window.updateMergedData(); 
             });
 
-            // 2. Cek Google Drive di background (Hanya untuk memeriksa adakah file baru diupload)
+            // 2. Cek Google Drive di background
             fetch(GAS_API_URL).then(res => res.json()).then(res => {
                 if(Array.isArray(res)) window.gasData = res;
                 window.updateMergedData(); 
@@ -642,15 +638,7 @@
                         .then(res => res.json())
                         .then(async res => {
                             if(res.status === 'success') {
-                                // Upload sukses, push ke firebase (AI background yang akan melengkapi detailnya)
-                                await window.firebaseSave({ 
-                                    nama: file.name, 
-                                    tipe: file.name.split('.').pop().toLowerCase(), 
-                                    ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB", 
-                                    kategori: document.getElementById('docCategory').value, 
-                                    url: res.url, 
-                                    tanggal: dateStr, 
-                                });
+                                // Upload sukses, data akan disync oleh Background Sync AI
                                 window.showToast('Berkas Terunggah! AI akan memindai di background.'); 
                                 window.fetchData();
                             } else { 
@@ -672,7 +660,7 @@
                         ukuran: 'Akses Web', 
                         kategori: document.getElementById('linkCategory').value, 
                         url: url, 
-                        tanggal: dateStr,
+                        tanggal: dateStr, 
                     });
                     window.showToast('Tautan Berhasil Disimpan!'); 
                     window.fetchData(); 
