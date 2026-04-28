@@ -69,12 +69,6 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .fade-in-once { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .pb-safe-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 1rem)); }
     </style>
 </head>
@@ -95,11 +89,12 @@
             </div>
         </header>
 
-        <!-- AREA KONTEN UTAMA -->
-        <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav fade-in-once scroll-smooth">
+        <!-- AREA KONTEN UTAMA (Animasi dihilangkan untuk cegah kedip) -->
+        <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav scroll-smooth">
             <!-- Content render by JS -->
         </main>
 
+        <!-- Navigasi Bawah -->
         <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
             <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
                 <button type="button" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
@@ -285,7 +280,7 @@
         };
 
         // ==========================================
-        // AUTO-SYNC & AI BACKGROUND (100% SILENT/SILUMAN)
+        // AUTO-SYNC & AI BACKGROUND PROCESSOR (SILENT)
         // ==========================================
         
         window.runBackgroundSync = async function() {
@@ -311,6 +306,7 @@
                     
                     if (response.ok) {
                         const res = await response.json();
+                        // Ambil Data SIKD dari Server AI
                         if(res.status === 'success' && res.data && Object.keys(res.data).length > 0) {
                             const data = res.data;
                             finalData.noSurat = data.noSurat || '';
@@ -332,26 +328,27 @@
                 finalData.yth = finalData.yth || '';
                 finalData.tanggalSurat = finalData.tanggalSurat || file.tanggal;
 
-                // SIMPAN PERMANEN KE FIREBASE
+                // SIMPAN PERMANEN KE FIREBASE (1X BACA)
                 await window.firebaseSave(finalData);
 
-                // Jeda 1.5 detik
-                await new Promise(r => setTimeout(r, 1500));
+                // Jeda 1 detik agar API Google tidak error
+                await new Promise(r => setTimeout(r, 1000));
             }
             
             window.isSyncing = false;
-            window.updateMergedData(); 
         };
 
         window.updateMergedData = function() {
             const mergedMap = new Map();
             const scannedDriveIds = new Set(); 
             
+            // 1. Data Utama dari Database Firebase
             window.firebaseData.forEach(item => {
                 mergedMap.set(item.nama, item);
                 if(item.driveId) scannedDriveIds.add(item.driveId); 
             });
             
+            // 2. Data dari Google Drive (Mencari file baru saja)
             window.gasData.forEach(item => {
                 if(!mergedMap.has(item.nama) && !scannedDriveIds.has(item.id)) {
                     let cat = 'FILE';
@@ -378,7 +375,8 @@
             const activeNav = document.querySelector('.nav-btn.text-monster');
             const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
             
-            if (!window.isSyncing && ['dashboard', 'search', 'drive'].includes(view)) {
+            // JANGAN RENDER ULANG JIKA SEDANG DI MENU INPUT (Agar form aman)
+            if (['dashboard', 'search', 'drive'].includes(view)) {
                 if (view === 'dashboard') window.renderDashboard();
                 else if (view === 'search') window.renderSearch();
                 else if (view === 'drive') window.renderDrive();
@@ -389,6 +387,7 @@
             }
         };
 
+        // LOADING AWAL YANG INSTAN
         window.fetchData = function(forceFetchDrive = false) {
             if(window.dataArsip.length === 0) {
                 window.isLoading = true; 
@@ -402,10 +401,7 @@
                     window.firebaseData = tempArr;
                     
                     window.isLoading = false; 
-                    
-                    if(!window.isSyncing) {
-                        window.updateMergedData(); 
-                    }
+                    window.updateMergedData(); 
                 });
                 window.firebaseListenerSetup = true;
             }
@@ -419,7 +415,7 @@
         }
 
         // ==========================================
-        // RENDERER HALAMAN
+        // RENDERER HALAMAN (TANPA ANIMASI FADE-IN)
         // ==========================================
 
         window.setDashboardTab = function(categoryCode) {
@@ -511,6 +507,7 @@
                     <div id="uploadFormContainer" class="space-y-5">
                         <div id="mode-file" class="space-y-5">
                             <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group flex flex-col items-center">
+                                <!-- Onchange diubah agar murni JavaScript, tanpa trigger submit -->
                                 <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.handleFileChange(this)">
                                 <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-monster/20 transition-all">
                                     <i id="uploadIcon" data-lucide="file-up" class="w-7 h-7 text-slate-400 group-hover:text-monster transition-colors"></i>
@@ -537,7 +534,7 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="button" id="btnSubmit" onclick="window.handleUpload(event)" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                        <button type="button" id="btnSubmit" onclick="window.handleUpload()" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
                             <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip 
                         </button>
                     </div>
@@ -649,9 +646,8 @@
             document.getElementById('linkCategory').value = (l.includes('sheets') || l.includes('excel')) ? 'DATA' : 'FILE';
         };
 
-        window.handleUpload = async (e) => {
-            if(e) e.preventDefault(); // Mencegah segala bentuk submit
-            
+        window.handleUpload = async () => {
+            // Karena kita menggunakan DIV dan bukan FORM, mustahil browser melakukan reload!
             const btn = document.getElementById('btnSubmit');
             if(!btn) return;
             const originalContent = btn.innerHTML;
@@ -668,6 +664,7 @@
                         throw new Error("Pilih berkas terlebih dahulu!");
                     }
                     const file = fInput.files[0];
+                    const docCategory = document.getElementById('docCategory').value;
                     
                     const reader = new FileReader();
                     reader.onload = async function(event) {
@@ -689,15 +686,26 @@
                             if(res.status === 'success') {
                                 window.showToast('Berkas Terunggah! AI akan memindainya.'); 
                                 
-                                // Bersihkan Input secara Manual agar UI tidak reset
+                                // Bersihkan Input Form secara Manual
                                 document.getElementById('docName').value = '';
                                 document.getElementById('fileInput').value = '';
                                 document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
                                 document.getElementById('docCategory').value = 'FILE';
                                 
-                                window.fetchData(true); 
+                                // Pancing agar file ini masuk antrean AI
+                                const newFileRecord = {
+                                    id: res.id,
+                                    nama: file.name,
+                                    tipe: file.name.split('.').pop().toLowerCase(),
+                                    url: res.url,
+                                    ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB",
+                                    tanggal: dateStr,
+                                    kategori: docCategory
+                                };
+                                window.gasData.push(newFileRecord);
+                                window.updateMergedData(); 
                             } else { 
-                                window.showToast("⚠️ Gagal menyimpan", "error"); 
+                                window.showToast("⚠️ Gagal menyimpan ke Drive", "error"); 
                             }
                         } catch (e) {
                             window.showToast("⚠️ Masalah Jaringan GAS", "error"); 
