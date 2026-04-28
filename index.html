@@ -82,6 +82,7 @@
 
     <div class="flex-1 w-full max-w-md md:max-w-5xl lg:max-w-6xl mx-auto relative flex flex-col h-full glass border-x-0 sm:border-x border-monster/20 sm:my-4 sm:rounded-3xl shadow-2xl overflow-hidden">
         
+        <!-- Header -->
         <header class="px-6 pt-6 pb-4 z-10 shrink-0">
             <div class="flex justify-between items-center">
                 <div>
@@ -94,16 +95,18 @@
             </div>
         </header>
 
-        <!-- Indikator Auto-Sync -->
+        <!-- Indikator Auto-Sync (Hanya muncul jika di background ada scan) -->
         <div id="sync-indicator" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-monster/30 text-white px-4 py-2 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(57,255,20,0.2)] flex items-center gap-2 hidden z-40 transition-all opacity-95">
             <i data-lucide="bot" class="w-4 h-4 text-monster animate-bounce"></i>
             <span id="sync-status-text">AI Membaca Dokumen Baru...</span>
         </div>
 
+        <!-- Area Konten Utama -->
         <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav fade-in-once scroll-smooth">
             <!-- Content render by JS -->
         </main>
 
+        <!-- Navigasi Bawah -->
         <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
             <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
                 <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
@@ -133,7 +136,7 @@
         </nav>
     </div>
 
-    <!-- Toast -->
+    <!-- Toast / Notifikasi -->
     <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-monster text-darkBg px-4 py-2.5 rounded-xl font-bold shadow-lg opacity-0 translate-y-[-20px] pointer-events-none z-50 flex items-center gap-2 text-sm w-max transition-all duration-300">
         <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5"></i>
         <span id="toast-msg">Berhasil!</span>
@@ -162,6 +165,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // GLOBAL STATES
         window.dataArsip = [];
         window.firebaseData = [];
         window.gasData = [];
@@ -172,11 +176,13 @@
         window.syncQueue = [];
         window.isSyncing = false;
 
-        // FUNGSI SIMPAN PERMANEN KE FIREBASE
+        // ==========================================
+        // FUNGSI FIREBASE (ANTI-ERROR & 1X KERJA)
+        // ==========================================
         window.firebaseSave = async (payload) => {
             try { 
                  const safePayload = {
-                    driveId: String(payload.id || payload.driveId || ''), 
+                    driveId: String(payload.id || payload.driveId || ''), // PENGUNCI AGAR TIDAK DI-SCAN ULANG
                     nama: String(payload.nama || 'Tanpa Nama'),
                     tipe: String(payload.tipe || 'file'),
                     ukuran: String(payload.ukuran || '-'),
@@ -189,6 +195,13 @@
                     tanggal: String(payload.tanggalSurat || payload.tanggal || new Date().toLocaleDateString('id-ID')), 
                     createdAt: serverTimestamp()
                 };
+
+                // Bersihkan properti undefined secara paksa sebelum dikirim
+                Object.keys(safePayload).forEach(key => {
+                    if (safePayload[key] === undefined || safePayload[key] === null || safePayload[key] === "undefined") {
+                        safePayload[key] = '';
+                    }
+                });
 
                 await push(ref(db, "arsip"), safePayload); 
             } catch(e) { console.error("Firebase Save Error:", e); }
@@ -227,12 +240,12 @@
                 <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
             </button>`;
 
-        // KARTU DOKUMEN & IKON FORMAT
         window.createFileCard = (file) => {
             let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700/30 border border-slate-600';
             const tipe = String(file.tipe || '').toLowerCase();
             const nama = String(file.nama || '').toLowerCase();
             
+            // Ikon Format File
             if(tipe.includes('pdf') || nama.endsWith('.pdf')) { icon = 'file-text'; color = 'text-red-500'; bg = 'bg-red-500/10 border border-red-500/30'; }
             else if(tipe.includes('doc') || tipe.includes('docx') || nama.endsWith('.doc') || nama.endsWith('.docx')) { icon = 'file-text'; color = 'text-blue-500'; bg = 'bg-blue-500/10 border border-blue-500/30'; }
             else if(tipe.includes('xls') || tipe.includes('csv') || nama.endsWith('.xls') || nama.endsWith('.xlsx') || nama.endsWith('.csv')) { icon = 'table'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10 border border-emerald-500/30'; }
@@ -241,14 +254,15 @@
             else if(tipe.includes('zip') || tipe.includes('rar') || nama.endsWith('.zip') || nama.endsWith('.rar')) { icon = 'archive'; color = 'text-yellow-500'; bg = 'bg-yellow-500/10 border border-yellow-500/30'; }
             else if(tipe.includes('html') || tipe.includes('url') || tipe.includes('link') || tipe === 'link-2') { icon = 'link-2'; color = 'text-cyan-500'; bg = 'bg-cyan-500/10 border border-cyan-500/30'; }
 
+            // Badge Sifat
             let sifatBadge = '';
-            if(file.sifat && file.sifat !== 'Biasa') {
+            if(file.sifat && file.sifat !== 'Biasa' && file.sifat.toLowerCase() !== 'undefined') {
                 const sL = file.sifat.toLowerCase();
                 let sCol = 'bg-slate-600/20 border-slate-500/30 text-slate-400';
                 if(sL.includes('penting')) sCol = 'bg-orange-500/20 border-orange-500/40 text-orange-400';
                 if(sL.includes('rahasia')) sCol = 'bg-red-500/20 border-red-500/40 text-red-400';
                 sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border text-[8px] font-bold ${sCol}">${file.sifat.toUpperCase()}</span>`;
-            } else if (file.sifat === 'Biasa') {
+            } else {
                  sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border border-slate-600/50 bg-slate-700/30 text-slate-400 text-[8px] font-bold">BIASA</span>`;
             }
 
@@ -279,7 +293,7 @@
         };
 
         // ==========================================
-        // AUTO-SYNC Latar Belakang (ANTI-MACET 100%)
+        // AUTO-SYNC & AI BACKGROUND PROCESSOR
         // ==========================================
         
         window.runBackgroundSync = async function() {
@@ -297,7 +311,7 @@
                 let finalData = { ...file }; 
 
                 try {
-                    // PENGAMAN: Jika dalam 15 detik Google gagal respons, langsung batal
+                    // PENGAMAN: Timeout 15 Detik. Lewat dari itu, skip agar tidak nyangkut.
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
@@ -326,7 +340,7 @@
                     console.warn("AI Skip File Timeout:", file.nama);
                 }
 
-                // Validasi Akhir agar pasti masuk Database
+                // Fallback (Jika AI kosong, isi dengan standar agar bisa tersimpan ke Firebase & tidak dibaca lagi)
                 finalData.noSurat = finalData.noSurat || '';
                 finalData.sifat = finalData.sifat || 'Biasa';
                 finalData.hal = finalData.hal || file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
@@ -342,11 +356,12 @@
             if(syncInd) syncInd.classList.add('hidden');
         };
 
+        // FUNGSI INI MENGGABUNGKAN DATA TANPA ME-RESET FORM INPUT ANDA
         window.updateMergedData = function() {
             const mergedMap = new Map();
             const scannedDriveIds = new Set(); 
             
-            // 1. Data Utama dari Database Firebase (Prioritas Utama)
+            // 1. Data dari Firebase (SUDAH DI SCAN)
             window.firebaseData.forEach(item => {
                 mergedMap.set(item.nama, item);
                 if(item.driveId) scannedDriveIds.add(item.driveId); 
@@ -375,10 +390,17 @@
                 return tB - tA;
             });
 
-            // Mencegah Kedip Layar
+            // ==========================================
+            // KUNCI ANTI KEDIP & ANTI RESET FORM
+            // ==========================================
             const activeNav = document.querySelector('.nav-btn.text-monster');
             const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
-            window.navigate(view);
+            
+            // Hanya perbarui layar jika berada di tab yang butuh pembaruan data
+            if(view === 'dashboard') window.renderDashboard();
+            else if(view === 'search') window.renderSearch();
+            else if(view === 'drive') window.renderDrive();
+            // JIKA VIEW === 'input' atau 'settings', JANGAN LAKUKAN APA-APA (Biarkan form input utuh)
 
             if(window.syncQueue.length > 0) window.runBackgroundSync();
         };
@@ -405,7 +427,7 @@
         }
 
         // ==========================================
-        // RENDERER HALAMAN (BEBAS KEDIP)
+        // RENDERER HALAMAN
         // ==========================================
 
         window.setDashboardTab = function(categoryCode) {
@@ -456,7 +478,7 @@
 
                     <div class="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">${tabsHtml}</div>
 
-                    <!-- TOMBOL FORMAT FILE (KLIK UNTUK FILTER Cepat) -->
+                    <!-- TOMBOL FORMAT FILE (KLIK UNTUK FILTER) -->
                     <div class="grid grid-cols-5 gap-2 mb-8">
                         ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
                         ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
@@ -477,7 +499,7 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="pt-2 h-full flex flex-col">
                     <div class="relative mb-6">
-                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Format..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
+                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Nama..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
                         <i data-lucide="search" class="absolute left-4 top-4 text-monster w-5 h-5"></i>
                     </div>
                     <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
@@ -662,9 +684,19 @@
                         .then(res => res.json())
                         .then(async res => {
                             if(res.status === 'success') {
-                                // Upload sukses, data akan disync oleh Background Sync AI
-                                window.showToast('Berkas Terunggah! AI akan memindai di background.'); 
-                                window.fetchData();
+                                // Upload sukses, push ke firebase
+                                await window.firebaseSave({ 
+                                    nama: file.name, 
+                                    tipe: file.name.split('.').pop().toLowerCase(), 
+                                    ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB", 
+                                    kategori: document.getElementById('docCategory').value, 
+                                    url: res.url, 
+                                    tanggal: dateStr, 
+                                });
+                                window.showToast('Berkas Terunggah! AI memindai di background.'); 
+                                // Bersihkan Form
+                                document.getElementById('uploadForm').reset();
+                                document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
                             } else { 
                                 window.showToast("⚠️ Simpan Drive Ditolak", "error"); 
                             }
@@ -687,7 +719,7 @@
                         tanggal: dateStr,
                     });
                     window.showToast('Tautan Berhasil Disimpan!'); 
-                    window.fetchData(); 
+                    document.getElementById('uploadForm').reset();
                     resetBtn();
                 }
             } catch(e) { 
