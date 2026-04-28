@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>E-Arsip Pro | AI SIKD Edition</title>
+    <title>E-Arsip Pro | Stable Edition</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,7 +69,7 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .fade-in-once { animation: fadeIn 0.4s ease-out forwards; }
+        .fade-in-once { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
@@ -82,31 +82,22 @@
 
     <div class="flex-1 w-full max-w-md md:max-w-5xl lg:max-w-6xl mx-auto relative flex flex-col h-full glass border-x-0 sm:border-x border-monster/20 sm:my-4 sm:rounded-3xl shadow-2xl overflow-hidden">
         
-        <!-- Header -->
         <header class="px-6 pt-6 pb-4 z-10 shrink-0">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-white tracking-wide">E-<span class="text-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">Arsip</span></h1>
-                    <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - SIKD Auto-Pilot</p>
+                    <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - SIKD Super Stable</p>
                 </div>
                 <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
-                    <i data-lucide="brain-circuit" class="text-monster w-5 h-5"></i>
+                    <i data-lucide="shield-check" class="text-monster w-5 h-5"></i>
                 </div>
             </div>
         </header>
 
-        <!-- Indikator Auto-Sync (Hanya muncul jika di background ada scan) -->
-        <div id="sync-indicator" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-monster/30 text-white px-4 py-2 rounded-full text-[10px] font-bold shadow-[0_0_15px_rgba(57,255,20,0.2)] flex items-center gap-2 hidden z-40 transition-all opacity-95">
-            <i data-lucide="bot" class="w-4 h-4 text-monster animate-bounce"></i>
-            <span id="sync-status-text">AI Membaca Dokumen Baru...</span>
-        </div>
-
-        <!-- Area Konten Utama -->
         <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav fade-in-once scroll-smooth">
             <!-- Content render by JS -->
         </main>
 
-        <!-- Navigasi Bawah -->
         <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
             <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
                 <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
@@ -168,25 +159,18 @@
         // GLOBAL STATES
         window.dataArsip = [];
         window.firebaseData = [];
-        window.gasData = [];
         window.isLoading = true; 
         window.activeUploadMode = 'file';
         window.activeDashboardTab = 'SEMUA';
-        
-        window.syncQueue = [];
-        window.isSyncing = false;
-
-        // Flags Pencegah Loading Berulang
         window.firebaseListenerSetup = false;
-        window.driveSynced = false;
 
         // ==========================================
-        // FUNGSI FIREBASE
+        // FUNGSI FIREBASE (100% AMAN DARI UNDEFINED)
         // ==========================================
         window.firebaseSave = async (payload) => {
             try { 
                  const safePayload = {
-                    driveId: String(payload.id || payload.driveId || ''), // PENGUNCI AGAR TIDAK DI-SCAN ULANG
+                    driveId: String(payload.driveId || ''), 
                     nama: String(payload.nama || 'Tanpa Nama'),
                     tipe: String(payload.tipe || 'file'),
                     ukuran: String(payload.ukuran || '-'),
@@ -196,23 +180,15 @@
                     hal: String(payload.hal || ''),
                     yth: String(payload.yth || ''),
                     url: String(payload.url || '#'),
-                    tanggal: String(payload.tanggalSurat || payload.tanggal || new Date().toLocaleDateString('id-ID')), 
+                    tanggal: String(payload.tanggal || new Date().toLocaleDateString('id-ID')), 
                     createdAt: serverTimestamp()
                 };
-
-                // Bersihkan properti undefined secara paksa
-                Object.keys(safePayload).forEach(key => {
-                    if (safePayload[key] === undefined || safePayload[key] === null || safePayload[key] === "undefined") {
-                        safePayload[key] = '';
-                    }
-                });
-
                 await push(ref(db, "arsip"), safePayload); 
             } catch(e) { console.error("Firebase Save Error:", e); }
         };
 
         // ==========================================
-        // UI HELPERS
+        // UI HELPERS (Tampilan)
         // ==========================================
         
         window.createSkeletonCard = () => `
@@ -244,12 +220,12 @@
                 <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
             </button>`;
 
+        // IKON FORMAT FILE OTOMATIS 
         window.createFileCard = (file) => {
             let icon = 'file'; let color = 'text-slate-400'; let bg = 'bg-slate-700/30 border border-slate-600';
             const tipe = String(file.tipe || '').toLowerCase();
             const nama = String(file.nama || '').toLowerCase();
             
-            // Ikon Format File
             if(tipe.includes('pdf') || nama.endsWith('.pdf')) { icon = 'file-text'; color = 'text-red-500'; bg = 'bg-red-500/10 border border-red-500/30'; }
             else if(tipe.includes('doc') || tipe.includes('docx') || nama.endsWith('.doc') || nama.endsWith('.docx')) { icon = 'file-text'; color = 'text-blue-500'; bg = 'bg-blue-500/10 border border-blue-500/30'; }
             else if(tipe.includes('xls') || tipe.includes('csv') || nama.endsWith('.xls') || nama.endsWith('.xlsx') || nama.endsWith('.csv')) { icon = 'table'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10 border border-emerald-500/30'; }
@@ -258,7 +234,6 @@
             else if(tipe.includes('zip') || tipe.includes('rar') || nama.endsWith('.zip') || nama.endsWith('.rar')) { icon = 'archive'; color = 'text-yellow-500'; bg = 'bg-yellow-500/10 border border-yellow-500/30'; }
             else if(tipe.includes('html') || tipe.includes('url') || tipe.includes('link') || tipe === 'link-2') { icon = 'link-2'; color = 'text-cyan-500'; bg = 'bg-cyan-500/10 border border-cyan-500/30'; }
 
-            // Badge Sifat
             let sifatBadge = '';
             if(file.sifat && file.sifat !== 'Biasa' && file.sifat.toLowerCase() !== 'undefined') {
                 const sL = file.sifat.toLowerCase();
@@ -297,141 +272,105 @@
         };
 
         // ==========================================
-        // AUTO-SYNC & AI BACKGROUND PROCESSOR
+        // SISTEM SINKRONISASI DRIVE MANUAL (SANGAT AMAN)
         // ==========================================
         
-        window.runBackgroundSync = async function() {
-            if(window.isSyncing || window.syncQueue.length === 0) return;
-            window.isSyncing = true;
-            
-            const syncInd = document.getElementById('sync-indicator');
-            const syncText = document.getElementById('sync-status-text');
-            if(syncInd) syncInd.classList.remove('hidden');
-
-            while(window.syncQueue.length > 0) {
-                const file = window.syncQueue.shift();
-                if(syncText) syncText.innerText = `AI Menganalisis: ${file.nama.substring(0,10)}...`;
-
-                let finalData = { ...file }; 
-
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000); 
-
-                    const response = await fetch(GAS_API_URL, {
-                        method: 'POST',
-                        headers: { "Content-Type": "text/plain" },
-                        body: JSON.stringify({ action: 'scanDrive', fileId: file.id }),
-                        signal: controller.signal
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (response.ok) {
-                        const res = await response.json();
-                        if(res.status === 'success' && res.data && Object.keys(res.data).length > 0) {
-                            const data = res.data;
-                            finalData.noSurat = data.noSurat || '';
-                            finalData.sifat = data.sifat || 'Biasa';
-                            finalData.hal = data.hal || '';
-                            finalData.yth = data.yth || '';
-                            finalData.tanggalSurat = data.tanggalSurat || file.tanggal; 
-                            finalData.kategori = data.kategori || file.kategori;
-                        }
-                    }
-                } catch (e) {
-                    console.warn("AI Skip File Timeout:", file.nama);
-                }
-
-                // Fallback 
-                finalData.noSurat = finalData.noSurat || '';
-                finalData.sifat = finalData.sifat || 'Biasa';
-                finalData.hal = finalData.hal || file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-                finalData.yth = finalData.yth || '';
-                finalData.tanggalSurat = finalData.tanggalSurat || file.tanggal;
-
-                // SIMPAN PERMANEN
-                await window.firebaseSave(finalData);
-                await new Promise(r => setTimeout(r, 1000));
+        window.syncDriveToFirebase = async function() {
+            const btn = document.getElementById('btnSyncDrive');
+            if(btn) {
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Menarik File Baru...`;
+                btn.disabled = true;
+                lucide.createIcons();
             }
             
-            window.isSyncing = false;
-            if(syncInd) syncInd.classList.add('hidden');
-        };
+            try {
+                const res = await fetch(GAS_API_URL);
+                const driveFiles = await res.json();
 
-        // FUNGSI PENGGABUNG DATA (KUNCI ANTI RESET FORM)
-        window.updateMergedData = function() {
-            const mergedMap = new Map();
-            const scannedDriveIds = new Set(); 
-            
-            window.firebaseData.forEach(item => {
-                mergedMap.set(item.nama, item);
-                if(item.driveId) scannedDriveIds.add(item.driveId); 
-            });
-            
-            window.gasData.forEach(item => {
-                if(!mergedMap.has(item.nama) && !scannedDriveIds.has(item.id)) {
-                    let cat = 'FILE';
-                    const lN = item.nama.toLowerCase();
-                    if (lN.includes('sk') || lN.includes('keputusan')) cat = 'SK';
-                    else if (lN.includes('tugas')) cat = 'SURAT TUGAS';
-                    item.kategori = cat;
+                let newFilesCount = 0;
+                const existingIds = new Set(window.firebaseData.map(f => f.driveId));
 
-                    mergedMap.set(item.nama, item); 
-                    
-                    if(!window.syncQueue.find(q => q.id === item.id)) {
-                        window.syncQueue.push(item);
+                for (let file of driveFiles) {
+                    if (!existingIds.has(file.id)) {
+                        // EKSTRAKTOR LOKAL (INSTAN 0.001 Detik)
+                        let lowerName = file.nama.toLowerCase();
+                        let cat = 'FILE';
+                        if (lowerName.includes('sk') || lowerName.includes('keputusan')) cat = 'SK';
+                        else if (lowerName.includes('tugas')) cat = 'SURAT TUGAS';
+                        else if (lowerName.includes('laporan')) cat = 'LAPORAN';
+
+                        let sifat = 'Biasa';
+                        if (lowerName.includes('penting')) sifat = 'Penting';
+                        if (lowerName.includes('rahasia')) sifat = 'Rahasia';
+
+                        let hal = file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+
+                        await window.firebaseSave({
+                            driveId: file.id,
+                            nama: file.nama,
+                            tipe: file.tipe,
+                            ukuran: file.ukuran,
+                            kategori: cat,
+                            noSurat: '', 
+                            sifat: sifat,
+                            hal: hal,
+                            yth: '',
+                            url: file.url,
+                            tanggal: file.tanggal
+                        });
+                        newFilesCount++;
                     }
                 }
-            });
-            
-            window.dataArsip = Array.from(mergedMap.values()).sort((a, b) => {
-                const tA = a.createdAt ? (typeof a.createdAt === 'number' ? a.createdAt : 0) : (Date.parse(a.tanggal) || 0);
-                const tB = b.createdAt ? (typeof b.createdAt === 'number' ? b.createdAt : 0) : (Date.parse(b.tanggal) || 0);
-                return tB - tA;
-            });
 
-            // ==========================================
-            // KUNCI ANTI-KEDIP & ANTI-RESET (100% AMAN)
-            // ==========================================
-            const activeNav = document.querySelector('.nav-btn.text-monster');
-            const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
-            
-            // JANGAN MERENDER ULANG JIKA PENGGUNA BERADA DI MENU INPUT ATAU SISTEM (Agar ketikan tidak hilang)
-            if (view === 'dashboard') window.renderDashboard();
-            else if (view === 'search') window.renderSearch();
-            else if (view === 'drive') window.renderDrive();
+                if (newFilesCount > 0) {
+                    window.showToast(`${newFilesCount} File baru berhasil disinkronkan!`, "success");
+                } else {
+                    window.showToast("Semua file sudah tersinkronisasi.", "success");
+                }
 
-            if(window.syncQueue.length > 0) window.runBackgroundSync();
+            } catch(e) {
+                window.showToast("Gagal menyinkronkan Drive", "error");
+            } finally {
+                if(btn) {
+                    btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Drive`;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }
+            }
         };
 
-        // FETCH DATA - HANYA DIJALANKAN SEKALI/TERKONTROL
-        window.fetchData = function(forceSyncDrive = false) {
+        // LOADING FIREBASE SAJA (Instan, Tidak Nyangkut)
+        window.fetchData = function() {
             if(window.dataArsip.length === 0) {
                 window.isLoading = true; 
                 window.renderDashboard(); 
             }
             
-            // 1. Firebase Realtime Listener (Hanya pasang 1x agar tidak berulang-ulang)
             if (!window.firebaseListenerSetup) {
                 onValue(ref(db, 'arsip'), (snapshot) => {
                     let tempArr = [];
                     snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
                     window.firebaseData = tempArr;
                     
+                    window.dataArsip = [...window.firebaseData].sort((a, b) => {
+                        const tA = a.createdAt ? (typeof a.createdAt === 'number' ? a.createdAt : 0) : (Date.parse(a.tanggal) || 0);
+                        const tB = b.createdAt ? (typeof b.createdAt === 'number' ? b.createdAt : 0) : (Date.parse(b.tanggal) || 0);
+                        return tB - tA;
+                    });
+
                     window.isLoading = false; 
-                    window.updateMergedData(); 
+                    
+                    // ANTI-RESET FORM: Hanya render ulang jika user TIDAK di menu input/setting
+                    const activeNav = document.querySelector('.nav-btn.text-monster');
+                    const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
+                    
+                    if (['dashboard', 'search', 'drive'].includes(view)) {
+                        if(view === 'dashboard') window.renderDashboard();
+                        else if(view === 'search') window.renderSearch();
+                        else if(view === 'drive') window.renderDrive();
+                    }
                 });
                 window.firebaseListenerSetup = true;
-            }
-
-            // 2. Google Drive Sync (Hanya sinkron sekali saat buka aplikasi atau saat dipaksa Refresh)
-            if (!window.driveSynced || forceSyncDrive) {
-                window.driveSynced = true;
-                fetch(GAS_API_URL).then(res => res.json()).then(res => {
-                    if(Array.isArray(res)) window.gasData = res;
-                    window.updateMergedData(); 
-                }).catch(e => { console.warn("Silent Sync Pending"); });
             }
         }
 
@@ -480,14 +419,14 @@
                         <div class="flex items-end gap-3 mt-2">
                             <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
                             <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
-                                <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Tersinkronisasi Otomatis
+                                <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Tersinkronisasi Cepat
                             </span>
                         </div>
                     </div>
 
                     <div class="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">${tabsHtml}</div>
 
-                    <!-- TOMBOL FORMAT FILE -->
+                    <!-- TOMBOL FORMAT FILE (KLIK UNTUK FILTER) -->
                     <div class="grid grid-cols-5 gap-2 mb-8">
                         ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
                         ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
@@ -573,7 +512,7 @@
                             <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
                             <div><p class="text-sm text-white font-bold leading-tight">Server Terhubung</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Indeks</p></div>
                         </div>
-                        <button onclick="fetchData(true)" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                        <button id="btnSyncDrive" onclick="syncDriveToFirebase()" class="bg-monster/10 text-monster px-3 py-2 rounded-xl text-xs font-bold hover:bg-monster hover:text-darkBg transition-all flex items-center gap-2 border border-monster/30"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Drive</button>
                     </div>
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
@@ -588,7 +527,7 @@
                     <div class="glass p-6 rounded-3xl space-y-6">
                         <div class="flex items-center gap-4 p-4 rounded-2xl border border-monster/30 bg-monster/5">
                             <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cpu" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm font-bold">Auto-Sync & AI Latar Belakang</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Memindai Drive & Firebase Otomatis</p></div>
+                            <div><p class="text-sm font-bold">Sinkronisasi Drive Manual Aktif</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Klik Sync di menu Database</p></div>
                         </div>
                         <div class="border-t border-slate-700/50 pt-5 space-y-3">
                             <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Utama Folder Google Drive</h3>
@@ -693,17 +632,23 @@
                         .then(res => res.json())
                         .then(async res => {
                             if(res.status === 'success') {
-                                // Upload sukses, push ke firebase
+                                // Ekstraktor Sifat Instan
+                                let lowerName = file.name.toLowerCase();
+                                let sifat = 'Biasa';
+                                if (lowerName.includes('penting')) sifat = 'Penting';
+                                if (lowerName.includes('rahasia')) sifat = 'Rahasia';
+
                                 await window.firebaseSave({ 
                                     nama: file.name, 
                                     tipe: file.name.split('.').pop().toLowerCase(), 
                                     ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB", 
                                     kategori: document.getElementById('docCategory').value, 
+                                    sifat: sifat,
+                                    hal: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
                                     url: res.url, 
                                     tanggal: dateStr, 
                                 });
-                                window.showToast('Berkas Terunggah! AI memindai di background.'); 
-                                // Bersihkan Form Tanpa Merefresh Halaman
+                                window.showToast('Berkas Berhasil Terunggah!'); 
                                 document.getElementById('uploadForm').reset();
                                 document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
                             } else { 
