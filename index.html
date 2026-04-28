@@ -176,8 +176,12 @@
         window.syncQueue = [];
         window.isSyncing = false;
 
+        // Flags Pencegah Loading Berulang
+        window.firebaseListenerSetup = false;
+        window.driveSynced = false;
+
         // ==========================================
-        // FUNGSI FIREBASE (ANTI-ERROR & 1X KERJA)
+        // FUNGSI FIREBASE
         // ==========================================
         window.firebaseSave = async (payload) => {
             try { 
@@ -196,7 +200,7 @@
                     createdAt: serverTimestamp()
                 };
 
-                // Bersihkan properti undefined secara paksa sebelum dikirim
+                // Bersihkan properti undefined secara paksa
                 Object.keys(safePayload).forEach(key => {
                     if (safePayload[key] === undefined || safePayload[key] === null || safePayload[key] === "undefined") {
                         safePayload[key] = '';
@@ -311,7 +315,6 @@
                 let finalData = { ...file }; 
 
                 try {
-                    // PENGAMAN: Timeout 15 Detik. Lewat dari itu, skip agar tidak nyangkut.
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
@@ -340,7 +343,7 @@
                     console.warn("AI Skip File Timeout:", file.nama);
                 }
 
-                // Fallback (Jika AI kosong, isi dengan standar agar bisa tersimpan ke Firebase & tidak dibaca lagi)
+                // Fallback 
                 finalData.noSurat = finalData.noSurat || '';
                 finalData.sifat = finalData.sifat || 'Biasa';
                 finalData.hal = finalData.hal || file.nama.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
@@ -356,18 +359,16 @@
             if(syncInd) syncInd.classList.add('hidden');
         };
 
-        // FUNGSI INI MENGGABUNGKAN DATA TANPA ME-RESET FORM INPUT ANDA
+        // FUNGSI PENGGABUNG DATA (KUNCI ANTI RESET FORM)
         window.updateMergedData = function() {
             const mergedMap = new Map();
             const scannedDriveIds = new Set(); 
             
-            // 1. Data dari Firebase (SUDAH DI SCAN)
             window.firebaseData.forEach(item => {
                 mergedMap.set(item.nama, item);
                 if(item.driveId) scannedDriveIds.add(item.driveId); 
             });
             
-            // 2. Cek File Baru di Drive
             window.gasData.forEach(item => {
                 if(!mergedMap.has(item.nama) && !scannedDriveIds.has(item.id)) {
                     let cat = 'FILE';
@@ -391,39 +392,47 @@
             });
 
             // ==========================================
-            // KUNCI ANTI KEDIP & ANTI RESET FORM
+            // KUNCI ANTI-KEDIP & ANTI-RESET (100% AMAN)
             // ==========================================
             const activeNav = document.querySelector('.nav-btn.text-monster');
             const view = activeNav ? activeNav.id.replace('nav-', '') : 'dashboard';
             
-            // Hanya perbarui layar jika berada di tab yang butuh pembaruan data
-            if(view === 'dashboard') window.renderDashboard();
-            else if(view === 'search') window.renderSearch();
-            else if(view === 'drive') window.renderDrive();
-            // JIKA VIEW === 'input' atau 'settings', JANGAN LAKUKAN APA-APA (Biarkan form input utuh)
+            // JANGAN MERENDER ULANG JIKA PENGGUNA BERADA DI MENU INPUT ATAU SISTEM (Agar ketikan tidak hilang)
+            if (view === 'dashboard') window.renderDashboard();
+            else if (view === 'search') window.renderSearch();
+            else if (view === 'drive') window.renderDrive();
 
             if(window.syncQueue.length > 0) window.runBackgroundSync();
         };
 
-        window.fetchData = function() {
+        // FETCH DATA - HANYA DIJALANKAN SEKALI/TERKONTROL
+        window.fetchData = function(forceSyncDrive = false) {
             if(window.dataArsip.length === 0) {
                 window.isLoading = true; 
                 window.renderDashboard(); 
             }
             
-            onValue(ref(db, 'arsip'), (snapshot) => {
-                let tempArr = [];
-                snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
-                window.firebaseData = tempArr;
-                
-                window.isLoading = false; 
-                window.updateMergedData(); 
-            });
+            // 1. Firebase Realtime Listener (Hanya pasang 1x agar tidak berulang-ulang)
+            if (!window.firebaseListenerSetup) {
+                onValue(ref(db, 'arsip'), (snapshot) => {
+                    let tempArr = [];
+                    snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
+                    window.firebaseData = tempArr;
+                    
+                    window.isLoading = false; 
+                    window.updateMergedData(); 
+                });
+                window.firebaseListenerSetup = true;
+            }
 
-            fetch(GAS_API_URL).then(res => res.json()).then(res => {
-                if(Array.isArray(res)) window.gasData = res;
-                window.updateMergedData(); 
-            }).catch(e => { console.warn("Silent Sync Pending"); });
+            // 2. Google Drive Sync (Hanya sinkron sekali saat buka aplikasi atau saat dipaksa Refresh)
+            if (!window.driveSynced || forceSyncDrive) {
+                window.driveSynced = true;
+                fetch(GAS_API_URL).then(res => res.json()).then(res => {
+                    if(Array.isArray(res)) window.gasData = res;
+                    window.updateMergedData(); 
+                }).catch(e => { console.warn("Silent Sync Pending"); });
+            }
         }
 
         // ==========================================
@@ -478,7 +487,7 @@
 
                     <div class="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">${tabsHtml}</div>
 
-                    <!-- TOMBOL FORMAT FILE (KLIK UNTUK FILTER) -->
+                    <!-- TOMBOL FORMAT FILE -->
                     <div class="grid grid-cols-5 gap-2 mb-8">
                         ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
                         ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
@@ -499,7 +508,7 @@
             document.getElementById('app-content').innerHTML = `
                 <div class="pt-2 h-full flex flex-col">
                     <div class="relative mb-6">
-                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Nama..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
+                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Format..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
                         <i data-lucide="search" class="absolute left-4 top-4 text-monster w-5 h-5"></i>
                     </div>
                     <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
@@ -564,7 +573,7 @@
                             <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
                             <div><p class="text-sm text-white font-bold leading-tight">Server Terhubung</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Indeks</p></div>
                         </div>
-                        <button onclick="fetchData()" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                        <button onclick="fetchData(true)" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
                     </div>
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
@@ -694,7 +703,7 @@
                                     tanggal: dateStr, 
                                 });
                                 window.showToast('Berkas Terunggah! AI memindai di background.'); 
-                                // Bersihkan Form
+                                // Bersihkan Form Tanpa Merefresh Halaman
                                 document.getElementById('uploadForm').reset();
                                 document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
                             } else { 
