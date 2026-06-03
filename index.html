@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>E-Arsip Pro | Ultimate AI SIKD</title>
+    <title>E-Arsip Pro | SDM PKH Tapin</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SweetAlert2 untuk Pop-up Keren -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         tailwind.config = {
@@ -16,8 +17,9 @@
                     colors: {
                         monster: '#39FF14',
                         monsterDark: '#2ebd0d',
-                        darkBg: '#0b1121',
-                        glassBg: 'rgba(17, 24, 39, 0.7)',
+                        primary: '#8B5CF6',     /* Soft Purple */
+                        primaryDark: '#6D28D9',
+                        darkBg: '#0f0c29',      /* Deep Background */
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -31,62 +33,88 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         body {
-            background-color: #0b1121;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(114,100%,54%,0.05) 0, transparent 50%);
+            /* Background gradasi 3D modern */
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             color: #e2e8f0;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
+            background-attachment: fixed;
         }
 
+        /* Efek Glassmorphism 3D Glossy */
         .glass {
-            background: rgba(30, 41, 59, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(57, 255, 20, 0.15);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .glass-input {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(71, 85, 105, 0.5);
-            transition: all 0.3s ease;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.3); /* Soft purple border */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .glass-input:focus {
             border-color: #39FF14;
-            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.2), inset 0 2px 4px rgba(0,0,0,0.2);
             outline: none;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        /* Animasi Tombol 3D */
+        .btn-3d {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .btn-3d:active {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: 0 2px 5px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
         }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(57, 255, 20, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #8B5CF6, #39FF14); border-radius: 10px; }
         
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .pb-safe-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 1rem)); }
+        .pb-safe-nav { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 1rem)); }
+
+        /* Kustomisasi SweetAlert agar menyatu dengan tema */
+        .swal-glass {
+            background: rgba(20, 15, 40, 0.85) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(139, 92, 246, 0.3) !important;
+            color: #fff !important;
+            border-radius: 24px !important;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.5) !important;
+        }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden font-sans text-slate-200">
 
-    <div class="flex-1 w-full max-w-md md:max-w-5xl lg:max-w-6xl mx-auto relative flex flex-col h-full glass border-x-0 sm:border-x border-monster/20 sm:my-4 sm:rounded-3xl shadow-2xl overflow-hidden">
+    <div class="flex-1 w-full max-w-md md:max-w-5xl lg:max-w-6xl mx-auto relative flex flex-col h-full glass border-x-0 sm:border-x sm:my-4 sm:rounded-3xl overflow-hidden">
         
-        <header class="px-6 pt-6 pb-4 z-10 shrink-0">
-            <div class="flex justify-between items-center">
+        <header class="px-6 pt-6 pb-4 z-10 shrink-0 relative">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[40px] pointer-events-none"></div>
+            <div class="flex justify-between items-center relative z-10">
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-white tracking-wide">E-<span class="text-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">Arsip</span></h1>
-                    <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - Ultimate AI SIKD</p>
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-wide">E-<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-monster drop-shadow-[0_0_8px_rgba(57,255,20,0.3)]">Arsip</span></h1>
+                    <p class="text-[11px] md:text-xs text-slate-300 mt-0.5 uppercase tracking-widest font-medium">SDM PKH Tapin</p>
                 </div>
-                <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
-                    <i data-lucide="shield-check" class="text-monster w-5 h-5"></i>
+                <div class="w-12 h-12 rounded-2xl glass flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] border border-primary/40 transform hover:rotate-12 transition-transform duration-300">
+                    <i data-lucide="zap" class="text-monster w-6 h-6 drop-shadow-[0_0_8px_rgba(57,255,20,0.8)]"></i>
                 </div>
             </div>
         </header>
 
-        <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav scroll-smooth">
+        <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav scroll-smooth relative z-10">
             <div id="view-dashboard" class="view-section"></div>
             <div id="view-search" class="view-section hidden"></div>
             <div id="view-input" class="view-section hidden"></div>
@@ -94,38 +122,33 @@
             <div id="view-settings" class="view-section hidden"></div>
         </main>
 
-        <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
-            <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
-                <button type="button" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
+        <nav class="absolute bottom-0 w-full glass rounded-t-3xl sm:rounded-b-3xl border-t border-primary/20 z-20 pb-[env(safe-area-inset-bottom)]">
+            <div class="flex justify-between md:justify-center md:gap-24 items-center h-20 px-6 relative">
+                <button type="button" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1.5 text-monster transition-all duration-300 w-14 hover:scale-110">
                     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Beranda</span>
+                    <span class="text-[9px] font-bold tracking-wider">Beranda</span>
                 </button>
-                <button type="button" onclick="navigate('search')" id="nav-search" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
+                <button type="button" onclick="navigate('search')" id="nav-search" class="nav-btn flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-primary transition-all duration-300 w-14 hover:scale-110">
                     <i data-lucide="search" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Cari</span>
+                    <span class="text-[9px] font-bold tracking-wider">Cari</span>
                 </button>
                 
-                <div class="w-14 flex justify-center">
-                    <button type="button" onclick="navigate('input')" id="nav-input-btn" class="absolute -top-6 w-14 h-14 rounded-full bg-monster hover:bg-monsterDark text-darkBg flex items-center justify-center shadow-[0_0_15px_rgba(57,255,20,0.4)] transition-transform hover:scale-105 active:scale-95 border-4 border-[#0b1121]">
-                        <i data-lucide="plus" class="w-7 h-7"></i>
+                <div class="w-16 flex justify-center relative">
+                    <button type="button" onclick="navigate('input')" id="nav-input-btn" class="absolute -top-10 w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-monster text-white flex items-center justify-center shadow-[0_10px_25px_rgba(57,255,20,0.4)] transition-all hover:scale-110 active:scale-95 border-4 border-[#1a1636] z-30">
+                        <i data-lucide="plus" class="w-8 h-8 drop-shadow-md"></i>
                     </button>
                 </div>
 
-                <button type="button" onclick="navigate('drive')" id="nav-drive" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
+                <button type="button" onclick="navigate('drive')" id="nav-drive" class="nav-btn flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-primary transition-all duration-300 w-14 hover:scale-110">
                     <i data-lucide="hard-drive" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Database</span>
+                    <span class="text-[9px] font-bold tracking-wider">Database</span>
                 </button>
-                <button type="button" onclick="navigate('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
+                <button type="button" onclick="navigate('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:text-primary transition-all duration-300 w-14 hover:scale-110">
                     <i data-lucide="settings" class="w-5 h-5"></i>
-                    <span class="text-[9px] font-medium">Sistem</span>
+                    <span class="text-[9px] font-bold tracking-wider">Sistem</span>
                 </button>
             </div>
         </nav>
-    </div>
-
-    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-monster text-darkBg px-4 py-2.5 rounded-xl font-bold shadow-lg opacity-0 translate-y-[-20px] pointer-events-none z-50 flex items-center gap-2 text-sm w-max transition-all duration-300">
-        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5"></i>
-        <span id="toast-msg">Berhasil!</span>
     </div>
 
     <script type="module">
@@ -133,7 +156,7 @@
         import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // ==========================================
-        // CONFIG & API KEYS
+        // BLUEPRINT TETAP TERKUNCI - TIDAK ADA PENGURANGAN LOGIKA
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCCWghHoB-YWITU1eWxWhEYODjuPzVgbl4",
@@ -159,14 +182,11 @@
         window.activeUploadMode = 'file';
         window.activeDashboardTab = 'SEMUA';
         window.firebaseListenerSetup = false;
-        window.currentView = 'dashboard'; // State managemen view baru baku
+        window.currentView = 'dashboard';
         
         window.syncQueue = [];
         window.isSyncing = false; 
 
-        // ==========================================
-        // FUNGSI FIREBASE
-        // ==========================================
         window.firebaseSave = async (payload) => {
             try { 
                  const safePayload = {
@@ -195,36 +215,38 @@
         };
 
         // ==========================================
-        // UI HELPERS (Tampilan)
+        // UI HELPERS
         // ==========================================
         
         window.createSkeletonCard = () => `
-            <div class="glass p-3.5 rounded-2xl flex items-center border border-transparent animate-pulse w-full mb-3">
-                <div class="w-10 h-10 rounded-xl bg-slate-700/50 shrink-0"></div>
-                <div class="flex-1 space-y-2 ml-3">
-                    <div class="h-3 bg-slate-600/50 rounded w-3/4"></div>
-                    <div class="h-2 bg-slate-700/50 rounded w-1/4"></div>
+            <div class="glass p-4 rounded-2xl flex items-center border border-transparent animate-pulse w-full mb-3">
+                <div class="w-12 h-12 rounded-xl bg-slate-700/50 shrink-0"></div>
+                <div class="flex-1 space-y-3 ml-4">
+                    <div class="h-3 bg-slate-600/50 rounded-full w-3/4"></div>
+                    <div class="h-2 bg-slate-700/50 rounded-full w-1/3"></div>
                 </div>
             </div>`;
 
         window.createCategoryTab = (label, code, count) => {
             const isActive = window.activeDashboardTab === code;
-            const bgClass = isActive ? 'bg-monster text-darkBg shadow-[0_0_10px_rgba(57,255,20,0.3)]' : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-monster/50';
-            const badgeBg = isActive ? 'bg-darkBg/20 text-darkBg' : 'bg-monster/10 text-monster';
+            const bgClass = isActive 
+                ? 'bg-gradient-to-r from-primary to-monster text-white shadow-[0_0_15px_rgba(139,92,246,0.4)] border-transparent' 
+                : 'glass text-slate-300 hover:border-primary/50';
+            const badgeBg = isActive ? 'bg-black/30 text-white' : 'bg-primary/20 text-primary';
             
             return `
-            <button type="button" onclick="setDashboardTab('${code}')" class="px-4 py-2 rounded-xl min-w-max flex items-center gap-2 font-bold transition-all ${bgClass}">
-                <span class="text-[11px] uppercase">${label}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded-md ${badgeBg}">${count}</span>
+            <button type="button" onclick="setDashboardTab('${code}')" class="px-5 py-2.5 rounded-xl min-w-max flex items-center gap-2.5 font-bold transition-all duration-300 border ${bgClass}">
+                <span class="text-[11px] uppercase tracking-wide">${label}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-lg font-black ${badgeBg}">${count}</span>
             </button>`;
         };
 
         window.createCategoryBtn = (icon, label, colorClass, bgClass, filterCode) => `
-            <button type="button" onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
-                <div class="${bgClass} ${colorClass} p-2 rounded-lg mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                    <i data-lucide="${icon}" class="w-4 h-4 md:w-5 md:h-5"></i>
+            <button type="button" onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-3 rounded-2xl glass hover:border-primary/60 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] group relative overflow-hidden transform hover:-translate-y-1">
+                <div class="${bgClass} ${colorClass} p-2.5 rounded-xl mb-2 group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                    <i data-lucide="${icon}" class="w-5 h-5 md:w-6 md:h-6"></i>
                 </div>
-                <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
+                <span class="text-[9px] md:text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase tracking-wider">${label}</span>
             </button>`;
 
         window.createFileCard = (file) => {
@@ -232,44 +254,43 @@
             const tipe = String(file.tipe || '').toLowerCase();
             const nama = String(file.nama || '').toLowerCase();
             
-            if(tipe.includes('pdf') || nama.endsWith('.pdf')) { icon = 'file-text'; color = 'text-red-500'; bg = 'bg-red-500/10 border border-red-500/30'; }
-            else if(tipe.includes('doc') || tipe.includes('docx') || nama.endsWith('.doc') || nama.endsWith('.docx')) { icon = 'file-text'; color = 'text-blue-500'; bg = 'bg-blue-500/10 border border-blue-500/30'; }
-            else if(tipe.includes('xls') || tipe.includes('csv') || nama.endsWith('.xls') || nama.endsWith('.xlsx') || nama.endsWith('.csv')) { icon = 'table'; color = 'text-emerald-500'; bg = 'bg-emerald-500/10 border border-emerald-500/30'; }
-            else if(tipe.includes('ppt') || nama.endsWith('.ppt') || nama.endsWith('.pptx')) { icon = 'presentation'; color = 'text-orange-500'; bg = 'bg-orange-500/10 border border-orange-500/30'; }
-            else if(tipe.includes('jpg') || tipe.includes('jpeg') || tipe.includes('png') || tipe.includes('image') || nama.endsWith('.jpg') || nama.endsWith('.png')) { icon = 'image'; color = 'text-purple-500'; bg = 'bg-purple-500/10 border border-purple-500/30'; }
-            else if(tipe.includes('zip') || tipe.includes('rar') || nama.endsWith('.zip') || nama.endsWith('.rar')) { icon = 'archive'; color = 'text-yellow-500'; bg = 'bg-yellow-500/10 border border-yellow-500/30'; }
-            else if(tipe.includes('html') || tipe.includes('url') || tipe.includes('link') || tipe === 'link-2') { icon = 'link-2'; color = 'text-cyan-500'; bg = 'bg-cyan-500/10 border border-cyan-500/30'; }
+            if(tipe.includes('pdf') || nama.endsWith('.pdf')) { icon = 'file-text'; color = 'text-red-400'; bg = 'bg-red-500/20 border border-red-500/40'; }
+            else if(tipe.includes('doc') || tipe.includes('docx') || nama.endsWith('.doc') || nama.endsWith('.docx')) { icon = 'file-text'; color = 'text-blue-400'; bg = 'bg-blue-500/20 border border-blue-500/40'; }
+            else if(tipe.includes('xls') || tipe.includes('csv') || nama.endsWith('.xls') || nama.endsWith('.xlsx') || nama.endsWith('.csv')) { icon = 'table'; color = 'text-emerald-400'; bg = 'bg-emerald-500/20 border border-emerald-500/40'; }
+            else if(tipe.includes('ppt') || nama.endsWith('.ppt') || nama.endsWith('.pptx')) { icon = 'presentation'; color = 'text-orange-400'; bg = 'bg-orange-500/20 border border-orange-500/40'; }
+            else if(tipe.includes('jpg') || tipe.includes('jpeg') || tipe.includes('png') || tipe.includes('image') || nama.endsWith('.jpg') || nama.endsWith('.png')) { icon = 'image'; color = 'text-purple-400'; bg = 'bg-purple-500/20 border border-purple-500/40'; }
+            else if(tipe.includes('zip') || tipe.includes('rar') || nama.endsWith('.zip') || nama.endsWith('.rar')) { icon = 'archive'; color = 'text-yellow-400'; bg = 'bg-yellow-500/20 border border-yellow-500/40'; }
+            else if(tipe.includes('html') || tipe.includes('url') || tipe.includes('link') || tipe === 'link-2') { icon = 'link-2'; color = 'text-cyan-400'; bg = 'bg-cyan-500/20 border border-cyan-500/40'; }
 
             let sifatBadge = '';
             if(file.sifat && file.sifat !== 'Biasa' && file.sifat.toLowerCase() !== 'undefined') {
                 const sL = file.sifat.toLowerCase();
-                let sCol = 'bg-slate-600/20 border-slate-500/30 text-slate-400';
-                if(sL.includes('penting')) sCol = 'bg-orange-500/20 border-orange-500/40 text-orange-400';
-                if(sL.includes('rahasia')) sCol = 'bg-red-500/20 border-red-500/40 text-red-400';
-                sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border text-[8px] font-bold ${sCol}">${file.sifat.toUpperCase()}</span>`;
+                let sCol = 'bg-slate-800/80 border-slate-600/50 text-slate-300';
+                if(sL.includes('penting')) sCol = 'bg-orange-900/60 border-orange-500/50 text-orange-300';
+                if(sL.includes('rahasia')) sCol = 'bg-red-900/60 border-red-500/50 text-red-300';
+                sifatBadge = `<span class="px-2 py-0.5 rounded-lg border text-[9px] font-extrabold tracking-wider ${sCol} shadow-inner">${file.sifat.toUpperCase()}</span>`;
             } else {
-                 sifatBadge = `<span class="px-1.5 py-0.5 rounded-md border border-slate-600/50 bg-slate-700/30 text-slate-400 text-[8px] font-bold">BIASA</span>`;
+                 sifatBadge = `<span class="px-2 py-0.5 rounded-lg border border-slate-600/50 bg-slate-800/80 text-slate-400 text-[9px] font-extrabold tracking-wider shadow-inner">BIASA</span>`;
             }
 
             return `
-                <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
-                    <div class="flex items-start gap-3.5 overflow-hidden w-full relative">
-                        <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
-                            <i data-lucide="${icon}" class="w-5 h-5"></i>
+                <div onclick="window.open('${file.url}', '_blank')" class="glass p-4 rounded-2xl flex items-start justify-between hover:border-primary/50 transition-all duration-300 cursor-pointer group hover:shadow-[0_5px_20px_rgba(139,92,246,0.15)] transform hover:-translate-y-0.5 mb-3">
+                    <div class="flex items-start gap-4 overflow-hidden w-full relative">
+                        <div class="p-3 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-inner">
+                            <i data-lucide="${icon}" class="w-6 h-6 drop-shadow-md"></i>
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="font-bold text-sm text-slate-100 break-words leading-tight group-hover:text-monster transition-colors">${file.nama}</h3>
                             
-                            <div class="mt-1.5 space-y-1">
-                                ${file.noSurat ? `<p class="text-[10px] text-monster/90 font-semibold truncate"><span class="text-slate-500 font-normal">No:</span> ${file.noSurat}</p>` : ''}
-                                ${file.hal ? `<p class="text-[10px] text-slate-300 truncate leading-snug"><span class="text-slate-500">Hal:</span> ${file.hal}</p>` : ''}
-                                ${file.yth ? `<p class="text-[10px] text-slate-400 truncate leading-snug"><span class="text-slate-500">Yth:</span> ${file.yth}</p>` : ''}
+                            <div class="mt-2 space-y-1.5 border-l-2 border-primary/30 pl-2">
+                                ${file.noSurat ? `<p class="text-[10px] text-monster font-bold truncate tracking-wide"><span class="text-slate-500 font-medium">No:</span> ${file.noSurat}</p>` : ''}
+                                ${file.hal ? `<p class="text-[11px] text-slate-300 truncate leading-snug"><span class="text-slate-500">Hal:</span> ${file.hal}</p>` : ''}
+                                ${file.yth ? `<p class="text-[10px] text-primary/80 truncate leading-snug"><span class="text-slate-500">Yth:</span> ${file.yth}</p>` : ''}
                             </div>
 
-                            <div class="flex items-center flex-wrap gap-2 mt-2 text-[8px] text-slate-500 font-bold uppercase tracking-wide">
-                                <span><i data-lucide="calendar" class="w-3 h-3 inline mr-0.5 mb-0.5"></i> ${file.tanggal || '-'}</span>
-                                <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="text-white bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-md">${file.kategori || 'FILE'}</span>
+                            <div class="flex items-center flex-wrap gap-2 mt-3 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                <span class="bg-black/30 px-2 py-1 rounded-lg border border-white/5"><i data-lucide="calendar" class="w-3 h-3 inline mr-1 mb-0.5 text-primary"></i> ${file.tanggal || '-'}</span>
+                                <span class="text-monster bg-monster/10 border border-monster/20 px-2 py-1 rounded-lg">${file.kategori || 'FILE'}</span>
                                 ${sifatBadge}
                             </div>
                         </div>
@@ -277,10 +298,6 @@
                 </div>`;
         };
 
-        // ==========================================
-        // AUTO-SYNC & AI BACKGROUND PROCESSOR (SILENT)
-        // ==========================================
-        
         window.runBackgroundSync = async function() {
             if(window.isSyncing || window.syncQueue.length === 0) return;
             window.isSyncing = true;
@@ -362,7 +379,6 @@
                 return tB - tA;
             });
 
-            // Sinkronisasi render yang aman menggunakan state global akurat
             if (window.currentView === 'dashboard') window.renderDashboard();
             else if (window.currentView === 'search') window.renderSearch();
             else if (window.currentView === 'drive') window.renderDrive();
@@ -398,10 +414,6 @@
             }
         }
 
-        // ==========================================
-        // RENDERER HALAMAN (Target Sub-Container Lebih Cepat)
-        // ==========================================
-
         window.setDashboardTab = function(categoryCode) {
             window.activeDashboardTab = categoryCode;
             window.renderDashboard();
@@ -425,41 +437,43 @@
                 ? window.createSkeletonCard().repeat(4) 
                 : (displayData.length > 0 
                     ? displayData.map(f => window.createFileCard(f)).join('') 
-                    : `<div class="col-span-full text-center py-10 opacity-50"><p>Belum ada arsip di kategori ini</p></div>`);
+                    : `<div class="col-span-full text-center py-12 glass rounded-2xl"><i data-lucide="folder-open" class="w-12 h-12 mx-auto text-primary/50 mb-3"></i><p class="text-sm font-medium text-slate-400">Belum ada arsip di kategori ini</p></div>`);
 
             document.getElementById('view-dashboard').innerHTML = `
-                <div class="pt-2">
-                    <div class="flex justify-between items-end mb-4 mt-2 px-1">
-                        <div>
-                            <h2 class="text-xl font-bold text-white">Dashboard SIKD</h2>
-                            <p class="text-[10px] text-monster font-medium mt-0.5 tracking-wider"><i data-lucide="zap" class="w-3 h-3 inline mr-1 text-monster"></i>Database Instan 0-Detik</p>
+                <div class="pt-4">
+                    <div class="bg-gradient-to-br from-[#1a1636] to-[#0f0c29] p-6 rounded-3xl border border-primary/30 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden mb-6 group">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-monster/10 rounded-full blur-[30px] group-hover:bg-primary/20 transition-colors duration-700"></div>
+                        <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-primary/20 rounded-full blur-[30px]"></div>
+                        
+                        <div class="relative z-10">
+                            <h2 class="text-slate-400 text-[11px] font-bold uppercase tracking-widest flex items-center gap-2">
+                                <i data-lucide="database" class="w-4 h-4 text-primary"></i> Total Dokumen Arsip
+                            </h2>
+                            <div class="flex items-end gap-4 mt-3">
+                                <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 drop-shadow-lg">${window.dataArsip.length}</span>
+                                <span class="text-monster text-[10px] font-bold mb-2 flex items-center bg-monster/10 px-2.5 py-1 rounded-lg border border-monster/30 shadow-inner">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1.5"></i> AI SIKD Aktif
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden mb-4">
-                        <div class="absolute -right-4 -top-4 w-28 h-28 bg-monster/10 rounded-full blur-2xl"></div>
-                        <h2 class="text-slate-300 text-xs font-medium uppercase tracking-wider">Total Dokumen Arsip</h2>
-                        <div class="flex items-end gap-3 mt-2">
-                            <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
-                            <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
-                                <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI SIKD Aktif
-                            </span>
-                        </div>
+                    <div class="flex gap-3 overflow-x-auto pb-4 mb-4 hide-scrollbar px-1">${tabsHtml}</div>
+
+                    <div class="grid grid-cols-5 gap-3 mb-8">
+                        ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-500/20', 'pdf')}
+                        ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-500/20', 'doc')}
+                        ${window.createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-500/20', 'ppt')}
+                        ${window.createCategoryBtn('table', 'Excel', 'text-emerald-400', 'bg-emerald-500/20', 'xls')}
+                        ${window.createCategoryBtn('link-2', 'Tautan', 'text-cyan-400', 'bg-cyan-500/20', 'link')}
                     </div>
 
-                    <div class="flex gap-2 overflow-x-auto pb-4 mb-2 hide-scrollbar">${tabsHtml}</div>
-
-                    <div class="grid grid-cols-5 gap-2 mb-8">
-                        ${window.createCategoryBtn('file-text', 'PDF', 'text-red-400', 'bg-red-400/10', 'pdf')}
-                        ${window.createCategoryBtn('file-text', 'Word', 'text-blue-400', 'bg-blue-400/10', 'doc')}
-                        ${window.createCategoryBtn('presentation', 'PPT', 'text-orange-400', 'bg-orange-400/10', 'ppt')}
-                        ${window.createCategoryBtn('table', 'Excel', 'text-green-400', 'bg-green-400/10', 'xls')}
-                        ${window.createCategoryBtn('link-2', 'Tautan', 'text-cyan-400', 'bg-cyan-400/10', 'link')}
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h3 class="text-lg font-extrabold text-white tracking-wide">Arsip Terbaru</h3>
+                        <div class="h-px bg-gradient-to-r from-primary/50 to-transparent flex-1 ml-4"></div>
                     </div>
 
-                    <h3 class="text-base font-bold text-white mb-4 px-1">Arsip Terbaru</h3>
-
-                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${listHtml}</div>
+                    <div class="space-y-0 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${listHtml}</div>
                 </div>`;
             lucide.createIcons();
         };
@@ -467,12 +481,14 @@
         window.renderSearch = function() {
             const list = window.isLoading ? window.createSkeletonCard().repeat(5) : window.dataArsip.map(f => window.createFileCard(f)).join('');
             document.getElementById('view-search').innerHTML = `
-                <div class="pt-2 h-full flex flex-col">
+                <div class="pt-4 h-full flex flex-col">
                     <div class="relative mb-6">
-                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Format..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
-                        <i data-lucide="search" class="absolute left-4 top-4 text-monster w-5 h-5"></i>
+                        <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Format..." class="w-full glass-input rounded-2xl py-4 pl-14 pr-4 text-sm text-white placeholder-slate-400 font-medium" onkeyup="handleSearch()">
+                        <div class="absolute left-4 top-3.5 p-1 bg-primary/20 rounded-lg">
+                            <i data-lucide="search" class="text-primary w-5 h-5"></i>
+                        </div>
                     </div>
-                    <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
+                    <div id="searchResults" class="space-y-0 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
             lucide.createIcons();
             if(!window.isLoading) document.getElementById('searchInput')?.focus();
@@ -480,43 +496,62 @@
 
         window.renderInput = function() {
             document.getElementById('view-input').innerHTML = `
-                <div class="pt-2 pb-6">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Entri Data Baru</h2>
-                    <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 shadow-inner">
-                        <button type="button" onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all">Upload Berkas</button>
-                        <button type="button" onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 transition-all">Tautan Link</button>
+                <div class="pt-4 pb-6">
+                    <h2 class="text-xl font-extrabold text-white mb-6 flex items-center gap-3">
+                        <div class="p-2 bg-primary/20 rounded-xl border border-primary/30"><i data-lucide="cloud-upload" class="text-primary w-6 h-6"></i></div>
+                        Entri Data Baru
+                    </h2>
+                    
+                    <div class="flex gap-2 mb-8 glass p-1.5 rounded-2xl shadow-inner">
+                        <button type="button" onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3.5 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-primaryDark text-white shadow-[0_5px_15px_rgba(139,92,246,0.4)] transition-all">Upload Berkas</button>
+                        <button type="button" onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-3.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition-all">Tautan Link</button>
                     </div>
                     
-                    <div id="uploadFormContainer" class="space-y-5">
-                        <div id="mode-file" class="space-y-5">
-                            <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group flex flex-col items-center">
+                    <div id="uploadFormContainer" class="space-y-6">
+                        <div id="mode-file" class="space-y-6">
+                            <div class="border-2 border-dashed border-primary/40 rounded-3xl p-8 text-center hover:border-monster hover:bg-monster/5 transition-all duration-300 cursor-pointer relative group flex flex-col items-center bg-black/20">
                                 <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" title="Pilih Berkas" onchange="window.handleFileChange(this)">
-                                <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-monster/20 transition-all">
-                                    <i id="uploadIcon" data-lucide="file-up" class="w-7 h-7 text-slate-400 group-hover:text-monster transition-colors"></i>
+                                <div class="w-16 h-16 glass rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-monster/20 transition-all duration-300 shadow-lg border border-primary/30">
+                                    <i id="uploadIcon" data-lucide="file-up" class="w-8 h-8 text-primary group-hover:text-monster transition-colors"></i>
                                 </div>
-                                <p class="text-sm text-slate-300 font-bold" id="fileNameDisplay">Ketuk untuk memilih Surat/Berkas</p>
+                                <p class="text-sm text-white font-bold tracking-wide" id="fileNameDisplay">Ketuk untuk memilih Berkas</p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">Mendukung PDF, Word, Excel, Gambar</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <input type="text" id="docName" readonly placeholder="Auto Name" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-slate-400 cursor-not-allowed">
-                                <select id="docCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3 px-4 text-xs text-monster font-bold focus:outline-none">
-                                    <option value="FILE">FILE UMUM</option><option value="SK">SK</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="DATA">DATA</option>
-                                </select>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1 tracking-wider">Nama Berkas</label>
+                                    <input type="text" id="docName" readonly placeholder="Auto Name" class="w-full glass-input rounded-xl py-3.5 px-4 text-xs text-slate-300 cursor-not-allowed opacity-70">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] text-slate-400 font-bold uppercase ml-1 tracking-wider">Kategori</label>
+                                    <select id="docCategory" class="w-full glass-input rounded-xl py-3.5 px-4 text-xs text-monster font-bold focus:outline-none appearance-none">
+                                        <option value="FILE">FILE UMUM</option><option value="SK">SK</option><option value="SURAT TUGAS">SURAT TUGAS</option><option value="LAPORAN">LAPORAN</option><option value="DATA">DATA</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        <div id="mode-link" class="hidden space-y-5">
-                            <div class="space-y-1">
-                                <label class="text-[10px] text-slate-500 font-bold ml-1 uppercase">Link Spreadsheet / Drive</label>
-                                <input type="url" id="linkUrl" placeholder="https://docs.google.com/..." class="w-full glass-input rounded-xl py-4 px-4 text-sm text-white" oninput="window.autoDetectLink(this.value)">
+                        <div id="mode-link" class="hidden space-y-6">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] text-slate-400 font-bold ml-1 uppercase tracking-wider">Link Tautan (Drive/Web)</label>
+                                <input type="url" id="linkUrl" placeholder="https://..." class="w-full glass-input rounded-xl py-4 px-4 text-sm text-white font-medium" oninput="window.autoDetectLink(this.value)">
                             </div>
                             <div class="grid grid-cols-2 gap-4">
-                                <input type="text" id="linkName" placeholder="Judul Tautan" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-sm text-white uppercase font-bold">
-                                <select id="linkCategory" class="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl py-3.5 px-4 text-xs text-monster font-bold">
-                                    <option value="DATA">DATA</option><option value="FILE">FILE</option><option value="LAPORAN">LAPORAN</option>
-                                </select>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] text-slate-400 font-bold ml-1 uppercase tracking-wider">Judul Tautan</label>
+                                    <input type="text" id="linkName" placeholder="Judul Tautan" class="w-full glass-input rounded-xl py-3.5 px-4 text-sm text-white font-bold">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="text-[10px] text-slate-400 font-bold ml-1 uppercase tracking-wider">Kategori</label>
+                                    <select id="linkCategory" class="w-full glass-input rounded-xl py-3.5 px-4 text-xs text-monster font-bold appearance-none">
+                                        <option value="DATA">DATA</option><option value="FILE">FILE</option><option value="LAPORAN">LAPORAN</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <button type="button" id="btnSubmit" onclick="window.handleUpload()" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                        
+                        <button type="button" id="btnSubmit" onclick="window.handleUpload()" class="btn-3d w-full bg-gradient-to-r from-monster to-monsterDark text-[#0b1121] font-black tracking-widest uppercase py-4 rounded-xl shadow-[0_10px_20px_rgba(57,255,20,0.3)] flex items-center justify-center gap-2 mt-4 text-sm">
                             <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip 
                         </button>
                     </div>
@@ -527,34 +562,49 @@
         window.renderDrive = () => {
             const list = window.isLoading ? window.createSkeletonCard().repeat(5) : window.dataArsip.map(f => window.createFileCard(f)).join('');
             document.getElementById('view-drive').innerHTML = `
-                <div class="pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="database" class="text-monster w-5 h-5"></i> Arsip Induk</h2>
-                    <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-md border-monster/20">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm text-white font-bold leading-tight">Server Terhubung</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Indeks</p></div>
+                <div class="pt-4">
+                    <h2 class="text-xl font-extrabold text-white mb-6 flex items-center gap-3">
+                        <div class="p-2 bg-primary/20 rounded-xl border border-primary/30"><i data-lucide="hard-drive" class="text-primary w-6 h-6"></i></div>
+                        Arsip Induk
+                    </h2>
+                    <div class="glass p-5 rounded-3xl mb-6 flex justify-between items-center shadow-lg border-primary/30 bg-gradient-to-br from-black/40 to-transparent">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-monster/10 rounded-2xl text-monster border border-monster/20 shadow-[0_0_15px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-6 h-6 animate-pulse"></i></div>
+                            <div>
+                                <p class="text-sm text-white font-extrabold leading-tight">Server Terhubung</p>
+                                <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1 font-medium">${window.dataArsip.length} Dokumen Indeks</p>
+                            </div>
                         </div>
-                        <button onclick="fetchData(true)" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+                        <button onclick="fetchData(true)" class="p-3.5 glass text-slate-300 hover:text-monster rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 shadow-inner"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
                     </div>
-                    <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
+                    <div class="space-y-0 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
             lucide.createIcons();
         };
 
         window.renderSettings = () => {
             document.getElementById('view-settings').innerHTML = `
-                <div class="pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Konfigurasi SIKD</h2>
-                    <div class="glass p-6 rounded-3xl space-y-6">
-                        <div class="flex items-center gap-4 p-4 rounded-2xl border border-monster/30 bg-monster/5">
-                            <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cpu" class="w-5 h-5"></i></div>
-                            <div><p class="text-sm font-bold">Auto-Sync & AI Latar Belakang</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Memindai Drive & Firebase Otomatis</p></div>
+                <div class="pt-4">
+                    <h2 class="text-xl font-extrabold text-white mb-6 flex items-center gap-3">
+                        <div class="p-2 bg-primary/20 rounded-xl border border-primary/30"><i data-lucide="sliders-horizontal" class="text-primary w-6 h-6"></i></div>
+                        Sistem & Konfigurasi
+                    </h2>
+                    <div class="glass p-6 rounded-3xl space-y-6 shadow-xl border-primary/20 relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/10 rounded-full blur-[30px]"></div>
+                        
+                        <div class="flex items-center gap-4 p-5 rounded-2xl border border-monster/30 bg-monster/5 relative z-10">
+                            <div class="p-2.5 bg-monster/20 rounded-xl text-monster shadow-[0_0_15px_rgba(57,255,20,0.3)]"><i data-lucide="cpu" class="w-6 h-6"></i></div>
+                            <div>
+                                <p class="text-sm font-extrabold text-white">Auto-Sync Latar Belakang</p>
+                                <p class="text-[10px] text-slate-400 uppercase mt-1 tracking-wider font-medium">Pemindaian Otomatis Aktif</p>
+                            </div>
                         </div>
-                        <div class="border-t border-slate-700/50 pt-5 space-y-3">
-                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Utama Folder Google Drive</h3>
+                        
+                        <div class="border-t border-slate-700/50 pt-5 space-y-3 relative z-10">
+                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Induk Google Drive</h3>
                             <div class="flex gap-2">
-                                <input type="url" readonly value="${DEFAULT_DRIVE_FOLDER}" class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-xs text-slate-400 outline-none">
-                                <button type="button" onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-3 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-all shadow-lg shadow-monster/10"><i data-lucide="external-link" class="w-5 h-5"></i></button>
+                                <input type="url" readonly value="${DEFAULT_DRIVE_FOLDER}" class="w-full glass-input rounded-xl py-3.5 px-4 text-xs text-slate-300 outline-none">
+                                <button type="button" onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-3.5 bg-primary/20 border border-primary/40 text-white rounded-xl hover:bg-primary hover:shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-all duration-300"><i data-lucide="external-link" class="w-5 h-5"></i></button>
                             </div>
                         </div>
                     </div>
@@ -563,47 +613,55 @@
         };
 
         // ==========================================
-        // HANDLERS (Navigasi Super Cepat Berbasis Toggle Class)
+        // HANDLERS
         // ==========================================
 
         window.navigate = function(view) {
             if (view === 'settings') {
-                const pass = prompt("Masukkan Password Akses Sistem:");
-                if (pass !== "admin123") {
-                    window.showToast("⚠️ Password Salah!", "error");
-                    return;
-                }
+                Swal.fire({
+                    title: 'Akses Sistem',
+                    input: 'password',
+                    inputPlaceholder: 'Masukkan Password...',
+                    customClass: { popup: 'swal-glass', confirmButton: 'bg-primary text-white rounded-xl px-6 py-2 font-bold' },
+                    buttonsStyling: false,
+                    showCancelButton: true,
+                    cancelButtonText: 'Batal',
+                    cancelButtonClass: 'bg-transparent border border-slate-600 text-slate-300 rounded-xl px-6 py-2 ml-2'
+                }).then((result) => {
+                    if (result.value === 'admin123') {
+                        executeNavigation('settings');
+                    } else if (result.value) {
+                        window.showToast("⚠️ Password Salah!", "error");
+                    }
+                });
+                return;
             }
+            executeNavigation(view);
+        };
 
+        function executeNavigation(view) {
             window.currentView = view;
-
-            // Kelola Status Aktif CSS Navigasi Menu
             document.querySelectorAll('.nav-btn').forEach(btn => { 
-                btn.classList.remove('text-monster'); 
+                btn.classList.remove('text-monster', 'scale-110'); 
                 btn.classList.add('text-slate-400'); 
             });
             
             const act = document.getElementById(`nav-${view}`);
             if(act) { 
                 act.classList.remove('text-slate-400'); 
-                act.classList.add('text-monster'); 
+                act.classList.add('text-monster', 'scale-110'); 
             }
 
-            // Sembunyikan semua section, lalu munculkan target view secara instan
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
             const targetSec = document.getElementById(`view-${view}`);
             if(targetSec) targetSec.classList.remove('hidden');
             
-            // Eksekusi render data internal jika dibutuhkan
             if(view === 'dashboard') window.renderDashboard();
             else if(view === 'search') window.renderSearch();
-            else if(view === 'input') {
-                // Render form pertama kali saja agar state ketikan user tersimpan awet
-                if(!targetSec.innerHTML) window.renderInput();
-            }
+            else if(view === 'input') { if(!targetSec.innerHTML) window.renderInput(); }
             else if(view === 'drive') window.renderDrive();
             else if(view === 'settings') window.renderSettings();
-        };
+        }
 
         window.handleFileChange = (el) => {
             const f = el.files[0];
@@ -618,7 +676,8 @@
 
                 setTimeout(() => {
                     icon.setAttribute('data-lucide', 'file-check-2');
-                    icon.classList.remove('animate-spin');
+                    icon.classList.remove('animate-spin', 'text-primary');
+                    icon.classList.add('text-monster');
                     lucide.createIcons();
                 }, 800);
 
@@ -635,8 +694,13 @@
         window.switchUploadMode = (m) => {
             window.activeUploadMode = m;
             const isF = m === 'file';
-            document.getElementById('tab-file').className = isF ? "flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all" : "flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
-            document.getElementById('tab-link').className = !isF ? "flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all" : "flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all";
+            
+            const activeClass = "flex-1 py-3.5 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-primaryDark text-white shadow-[0_5px_15px_rgba(139,92,246,0.4)] transition-all";
+            const inactiveClass = "flex-1 py-3.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition-all";
+
+            document.getElementById('tab-file').className = isF ? activeClass : inactiveClass;
+            document.getElementById('tab-link').className = !isF ? activeClass : inactiveClass;
+            
             document.getElementById('mode-file').classList.toggle('hidden', !isF);
             document.getElementById('mode-link').classList.toggle('hidden', isF);
         };
@@ -666,49 +730,47 @@
                     const docCategory = document.getElementById('docCategory').value;
                     
                     const reader = new FileReader();
-                    reader.onload = async function(event) {
-                        try {
-                            const base64Data = event.target.result.split(',')[1];
-                            const response = await fetch(GAS_API_URL, { 
-                                method: 'POST', 
-                                headers: { 'Content-Type': 'text/plain' },
-                                body: JSON.stringify({ 
-                                    action: 'upload', 
-                                    fileName: file.name, 
-                                    mimeType: file.type, 
-                                    fileData: base64Data 
-                                })
-                            });
-                            
-                            const res = await response.json();
-                            
+                    reader.onload = function(event) {
+                        const base64Data = event.target.result.split(',')[1];
+                        
+                        // PEMBARUAN: Asynchronous Upload agar tidak ada loading lama
+                        fetch(GAS_API_URL, { 
+                            method: 'POST', 
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: 'upload', fileName: file.name, mimeType: file.type, fileData: base64Data })
+                        }).then(res => res.json()).then(res => {
                             if(res.status === 'success') {
-                                window.showToast('Berkas Terunggah! AI akan memindainya.'); 
-                                
-                                document.getElementById('docName').value = '';
-                                document.getElementById('fileInput').value = '';
-                                document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Surat/Berkas";
-                                document.getElementById('docCategory').value = 'FILE';
-                                
+                                window.showToast('Berkas Berhasil Tersimpan di Cloud!', 'success'); 
                                 const newFileRecord = {
-                                    id: res.id,
-                                    nama: file.name,
-                                    tipe: file.name.split('.').pop().toLowerCase(),
-                                    url: res.url,
-                                    ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB",
-                                    tanggal: dateStr,
-                                    kategori: docCategory
+                                    id: res.id, nama: file.name, tipe: file.name.split('.').pop().toLowerCase(),
+                                    url: res.url, ukuran: (file.size / 1024 / 1024).toFixed(2) + " MB",
+                                    tanggal: dateStr, kategori: docCategory
                                 };
                                 window.gasData.push(newFileRecord);
                                 window.updateMergedData(); 
-                            } else { 
-                                window.showToast("⚠️ Gagal menyimpan ke Drive", "error"); 
                             }
-                        } catch (e) {
-                            window.showToast("⚠️ Masalah Jaringan GAS", "error"); 
-                        } finally {
-                            resetBtn();
-                        }
+                        }).catch(e => {
+                            console.error(e);
+                        });
+
+                        // Tampilkan Notifikasi Langsung dan Reset Form Instan (Loading Dihilangkan)
+                        Swal.fire({
+                            title: 'Memproses...',
+                            text: 'Berkas sedang diunggah di latar belakang. Anda bisa melanjutkan pekerjaan!',
+                            icon: 'info',
+                            toast: true,
+                            position: 'top',
+                            showConfirmButton: false,
+                            timer: 4000,
+                            customClass: { popup: 'swal-glass' }
+                        });
+                        
+                        document.getElementById('docName').value = '';
+                        document.getElementById('fileInput').value = '';
+                        document.getElementById('fileNameDisplay').innerText = "Ketuk untuk memilih Berkas";
+                        document.getElementById('docCategory').value = 'FILE';
+                        
+                        resetBtn();
                     };
                     reader.readAsDataURL(file);
                 } else {
@@ -717,16 +779,12 @@
                     if(!linkName || !linkUrl) throw new Error("Lengkapi data tautan!");
                     
                     await window.firebaseSave({ 
-                        driveId: 'link-' + Date.now(),
-                        nama: linkName.toUpperCase(), 
-                        tipe: 'link', 
-                        ukuran: 'Akses Web', 
-                        kategori: document.getElementById('linkCategory').value, 
-                        url: linkUrl, 
-                        tanggal: dateStr,
+                        driveId: 'link-' + Date.now(), nama: linkName.toUpperCase(), tipe: 'link', 
+                        ukuran: 'Akses Web', kategori: document.getElementById('linkCategory').value, 
+                        url: linkUrl, tanggal: dateStr,
                     });
                     
-                    window.showToast('Tautan Berhasil Disimpan!'); 
+                    window.showToast('Tautan Berhasil Disimpan!', 'success'); 
                     document.getElementById('linkUrl').value = '';
                     document.getElementById('linkName').value = '';
                     document.getElementById('linkCategory').value = 'DATA';
@@ -768,32 +826,22 @@
             );
             
             const container = document.getElementById('searchResults');
-            if(container) container.innerHTML = res.length ? res.map(f => window.createFileCard(f)).join('') : `<div class="col-span-full text-center py-10 opacity-50"><p>Dokumen tidak ditemukan</p></div>`;
+            if(container) container.innerHTML = res.length ? res.map(f => window.createFileCard(f)).join('') : `<div class="col-span-full text-center py-12 glass rounded-2xl"><i data-lucide="search-x" class="w-12 h-12 mx-auto text-primary/50 mb-3"></i><p class="text-sm font-medium text-slate-400">Dokumen tidak ditemukan</p></div>`;
             lucide.createIcons();
         };
 
+        // PEMBARUAN: Integrasi SweetAlert2 untuk Notifikasi Pop-up Keren
         window.showToast = (msg, type = 'success') => {
-            const t = document.getElementById('toast');
-            const icon = document.getElementById('toast-icon');
-            document.getElementById('toast-msg').innerText = msg;
-            
-            if(type === 'error') {
-                t.classList.remove('bg-monster');
-                t.classList.add('bg-red-500', 'text-white');
-                icon.setAttribute('data-lucide', 'alert-circle');
-            } else {
-                t.classList.remove('bg-red-500');
-                t.classList.add('bg-monster', 'text-darkBg');
-                icon.setAttribute('data-lucide', 'check-circle');
-            }
-            lucide.createIcons();
-
-            t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
-            t.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => { 
-                t.classList.add('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
-                t.classList.remove('opacity-100', 'translate-y-0');
-            }, 3000);
+            Swal.fire({
+                title: type === 'success' ? 'Berhasil!' : 'Peringatan',
+                text: msg,
+                icon: type,
+                toast: true,
+                position: 'top',
+                showConfirmButton: false,
+                timer: 3000,
+                customClass: { popup: 'swal-glass' }
+            });
         };
 
         window.onload = () => window.fetchData(true);
