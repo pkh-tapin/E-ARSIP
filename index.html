@@ -6,6 +6,8 @@
     <title>E-Arsip Pro | Ultimate AI SIKD</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
         tailwind.config = {
@@ -42,7 +44,6 @@
         .glass {
             background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(57, 255, 20, 0.15);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
@@ -50,7 +51,7 @@
         .glass-input {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(71, 85, 105, 0.5);
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .glass-input:focus {
@@ -67,18 +68,6 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .pb-safe-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 1rem)); }
-        
-        /* Optimasi HP Low-End / Mencegah Lag Animasi */
-        #toast {
-            will-change: transform, opacity;
-        }
-        .animate-spin-cpu {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col overflow-hidden font-sans text-slate-200">
@@ -92,37 +81,42 @@
                     <p class="text-[11px] md:text-xs text-slate-400 mt-0.5 uppercase tracking-tighter">PKH Tapin - Ultimate AI SIKD</p>
                 </div>
                 <div class="w-10 h-10 rounded-full border border-monster flex items-center justify-center bg-slate-800 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
-                    <svg class="text-monster w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <i data-lucide="shield-check" class="text-monster w-5 h-5"></i>
                 </div>
             </div>
         </header>
 
         <main id="app-content" class="flex-1 overflow-y-auto px-6 pb-safe-nav scroll-smooth">
-            </main>
+            <div id="view-dashboard" class="view-section"></div>
+            <div id="view-search" class="view-section hidden"></div>
+            <div id="view-input" class="view-section hidden"></div>
+            <div id="view-drive" class="view-section hidden"></div>
+            <div id="view-settings" class="view-section hidden"></div>
+        </main>
 
         <nav class="absolute bottom-0 w-full glass rounded-b-none sm:rounded-b-3xl border-t border-monster/20 z-20">
             <div class="flex justify-between md:justify-center md:gap-24 items-center h-16 px-6 relative">
                 <button type="button" onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center justify-center gap-1 text-monster transition-colors w-14">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                     <span class="text-[9px] font-medium">Beranda</span>
                 </button>
                 <button type="button" onclick="navigate('search')" id="nav-search" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <i data-lucide="search" class="w-5 h-5"></i>
                     <span class="text-[9px] font-medium">Cari</span>
                 </button>
                 
                 <div class="w-14 flex justify-center">
-                    <button type="button" onclick="navigate('input')" id="nav-input" class="nav-btn absolute -top-6 w-14 h-14 rounded-full bg-monster hover:bg-monsterDark text-darkBg flex items-center justify-center shadow-[0_0_15px_rgba(57,255,20,0.4)] transition-transform hover:scale-105 active:scale-95 border-4 border-[#0b1121]">
-                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+                    <button type="button" onclick="navigate('input')" id="nav-input-btn" class="absolute -top-6 w-14 h-14 rounded-full bg-monster hover:bg-monsterDark text-darkBg flex items-center justify-center shadow-[0_0_15px_rgba(57,255,20,0.4)] transition-transform hover:scale-105 active:scale-95 border-4 border-[#0b1121]">
+                        <i data-lucide="plus" class="w-7 h-7"></i>
                     </button>
                 </div>
 
                 <button type="button" onclick="navigate('drive')" id="nav-drive" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="3" rx="2"/><rect width="20" height="8" x="2" y="13" rx="2"/><path d="M6 7h.01M6 17h.01M14 7h.01M14 17h.01"/></svg>
+                    <i data-lucide="hard-drive" class="w-5 h-5"></i>
                     <span class="text-[9px] font-medium">Database</span>
                 </button>
                 <button type="button" onclick="navigate('settings')" id="nav-settings" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-monster transition-colors w-14">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <i data-lucide="settings" class="w-5 h-5"></i>
                     <span class="text-[9px] font-medium">Sistem</span>
                 </button>
             </div>
@@ -130,7 +124,7 @@
     </div>
 
     <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-monster text-darkBg px-4 py-2.5 rounded-xl font-bold shadow-lg opacity-0 translate-y-[-20px] pointer-events-none z-50 flex items-center gap-2 text-sm w-max transition-all duration-300">
-        <span id="toast-icon-wrapper" class="flex items-center justify-center"></span>
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5"></i>
         <span id="toast-msg">Berhasil!</span>
     </div>
 
@@ -138,6 +132,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
+        // ==========================================
+        // CONFIG & API KEYS
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCCWghHoB-YWITU1eWxWhEYODjuPzVgbl4",
             authDomain: "arsip-pkh-tapin.firebaseapp.com",
@@ -162,44 +159,10 @@
         window.activeUploadMode = 'file';
         window.activeDashboardTab = 'SEMUA';
         window.firebaseListenerSetup = false;
-        window.currentView = 'dashboard'; // State Navigasi Utama
+        window.currentView = 'dashboard'; // State managemen view baru baku
         
         window.syncQueue = [];
         window.isSyncing = false; 
-
-        // ENGINE REGISTRY REGISTER: INLINE SVG RAW DATA (Anti-Network Dependency)
-        window.getIcon = (name, cls = "w-5 h-5") => {
-            const icons = {
-                'layout-dashboard': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
-                'search': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
-                'plus': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>`,
-                'hard-drive': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="3" rx="2"/><rect width="20" height="8" x="2" y="13" rx="2"/><path d="M6 7h.01M6 17h.01M14 7h.01M14 17h.01"/></svg>`,
-                'settings': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
-                'check-circle': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01-3-3"/></svg>`,
-                'alert-circle': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
-                'zap': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-                'file': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>`,
-                'file-text': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></svg>`,
-                'table': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M3 3h18v18H3Z"/></svg>`,
-                'presentation': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3M12 16v4M9 20h6"/></svg>`,
-                'image': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
-                'archive': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></svg>`,
-                'link-2': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg>`,
-                'calendar': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>`,
-                'cloud-lightning': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M13 10l-4 6h4v6l4-6h-4v-6Z"/></svg>`,
-                'refresh-cw': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5"/></svg>`,
-                'sliders-horizontal': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="10" y1="2" y2="6"/><line x1="12" x2="8" y1="10" y2="14"/><line x1="16" x2="12" y1="18" y2="22"/></svg>`,
-                'cpu': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/></svg>`,
-                'external-link': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`,
-                'cloud-upload': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9M16 16l-4-4-4 4"/></svg>`,
-                'file-up': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6M9 15l3-3 3 3"/></svg>`,
-                'loader-2': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
-                'loader': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/></svg>`,
-                'file-check-2': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></svg>`,
-                'save': `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`
-            };
-            return icons[name] || '';
-        };
 
         // ==========================================
         // FUNGSI FIREBASE
@@ -232,8 +195,9 @@
         };
 
         // ==========================================
-        // UI HELPERS (Tampilan Render)
+        // UI HELPERS (Tampilan)
         // ==========================================
+        
         window.createSkeletonCard = () => `
             <div class="glass p-3.5 rounded-2xl flex items-center border border-transparent animate-pulse w-full mb-3">
                 <div class="w-10 h-10 rounded-xl bg-slate-700/50 shrink-0"></div>
@@ -258,7 +222,7 @@
         window.createCategoryBtn = (icon, label, colorClass, bgClass, filterCode) => `
             <button type="button" onclick="filterFiles('${filterCode}')" class="flex flex-col items-center justify-center p-2.5 rounded-xl glass hover:border-monster/40 transition-all hover:shadow-[0_0_15px_rgba(57,255,20,0.15)] group relative overflow-hidden">
                 <div class="${bgClass} ${colorClass} p-2 rounded-lg mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                    ${window.getIcon(icon, "w-4 h-4 md:w-5 md:h-5")}
+                    <i data-lucide="${icon}" class="w-4 h-4 md:w-5 md:h-5"></i>
                 </div>
                 <span class="text-[8px] md:text-[10px] font-bold text-slate-300 group-hover:text-white transition-colors truncate w-full text-center uppercase">${label}</span>
             </button>`;
@@ -291,7 +255,7 @@
                 <div onclick="window.open('${file.url}', '_blank')" class="glass p-3.5 rounded-2xl flex items-start justify-between border border-transparent hover:border-monster/40 transition-all cursor-pointer group shadow-sm hover:shadow-monster/10">
                     <div class="flex items-start gap-3.5 overflow-hidden w-full relative">
                         <div class="p-2.5 rounded-xl ${bg} ${color} shrink-0 group-hover:scale-110 transition-transform duration-300">
-                            ${window.getIcon(icon, "w-5 h-5")}
+                            <i data-lucide="${icon}" class="w-5 h-5"></i>
                         </div>
                         <div class="min-w-0 flex-1">
                             <h3 class="font-bold text-sm text-slate-100 break-words leading-tight group-hover:text-monster transition-colors">${file.nama}</h3>
@@ -303,7 +267,7 @@
                             </div>
 
                             <div class="flex items-center flex-wrap gap-2 mt-2 text-[8px] text-slate-500 font-bold uppercase tracking-wide">
-                                <span>${window.getIcon('calendar', 'w-3 h-3 inline mr-0.5 mb-0.5')} ${file.tanggal || '-'}</span>
+                                <span><i data-lucide="calendar" class="w-3 h-3 inline mr-0.5 mb-0.5"></i> ${file.tanggal || '-'}</span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span class="text-white bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded-md">${file.kategori || 'FILE'}</span>
                                 ${sifatBadge}
@@ -314,8 +278,9 @@
         };
 
         // ==========================================
-        // AUTO-SYNC & AI BACKGROUND PROCESSOR
+        // AUTO-SYNC & AI BACKGROUND PROCESSOR (SILENT)
         // ==========================================
+        
         window.runBackgroundSync = async function() {
             if(window.isSyncing || window.syncQueue.length === 0) return;
             window.isSyncing = true;
@@ -349,7 +314,9 @@
                             finalData.kategori = data.kategori || file.kategori;
                         }
                     }
-                } catch (e) { console.warn("AI Timeout File:", file.nama); }
+                } catch (e) {
+                    console.warn("AI Timeout File:", file.nama);
+                }
 
                 finalData.noSurat = finalData.noSurat || '';
                 finalData.sifat = finalData.sifat || 'Biasa';
@@ -360,6 +327,7 @@
                 await window.firebaseSave(finalData);
                 await new Promise(r => setTimeout(r, 1000));
             }
+            
             window.isSyncing = false;
         };
 
@@ -381,6 +349,7 @@
                     item.kategori = cat;
 
                     mergedMap.set(item.nama, item); 
+                    
                     if(!window.syncQueue.find(q => q.id === item.id)) {
                         window.syncQueue.push(item);
                     }
@@ -393,12 +362,10 @@
                 return tB - tA;
             });
 
-            // PROTEKSI RENDERING KETAT: Mencegah Form Input Terhapus Saat Sync Latar Belakang Berjalan
-            if (['dashboard', 'search', 'drive'].includes(window.currentView)) {
-                if (window.currentView === 'dashboard') window.renderDashboard();
-                else if (window.currentView === 'search') window.renderSearch();
-                else if (window.currentView === 'drive') window.renderDrive();
-            }
+            // Sinkronisasi render yang aman menggunakan state global akurat
+            if (window.currentView === 'dashboard') window.renderDashboard();
+            else if (window.currentView === 'search') window.renderSearch();
+            else if (window.currentView === 'drive') window.renderDrive();
 
             if(window.syncQueue.length > 0 && !window.isSyncing) {
                 window.runBackgroundSync();
@@ -416,6 +383,7 @@
                     let tempArr = [];
                     snapshot.forEach((child) => tempArr.push({ id: child.key, ...child.val() }));
                     window.firebaseData = tempArr;
+                    
                     window.isLoading = false; 
                     window.updateMergedData(); 
                 });
@@ -431,8 +399,9 @@
         }
 
         // ==========================================
-        // RENDERER HALAMAN (INSTAN TANPA LAG/CRASH)
+        // RENDERER HALAMAN (Target Sub-Container Lebih Cepat)
         // ==========================================
+
         window.setDashboardTab = function(categoryCode) {
             window.activeDashboardTab = categoryCode;
             window.renderDashboard();
@@ -458,12 +427,12 @@
                     ? displayData.map(f => window.createFileCard(f)).join('') 
                     : `<div class="col-span-full text-center py-10 opacity-50"><p>Belum ada arsip di kategori ini</p></div>`);
 
-            document.getElementById('app-content').innerHTML = `
+            document.getElementById('view-dashboard').innerHTML = `
                 <div class="pt-2">
                     <div class="flex justify-between items-end mb-4 mt-2 px-1">
                         <div>
                             <h2 class="text-xl font-bold text-white">Dashboard SIKD</h2>
-                            <p class="text-[10px] text-monster font-medium mt-0.5 tracking-wider flex items-center gap-1">${window.getIcon('zap', 'w-3 h-3 text-monster')} Database Instan 0-Detik</p>
+                            <p class="text-[10px] text-monster font-medium mt-0.5 tracking-wider"><i data-lucide="zap" class="w-3 h-3 inline mr-1 text-monster"></i>Database Instan 0-Detik</p>
                         </div>
                     </div>
 
@@ -472,8 +441,8 @@
                         <h2 class="text-slate-300 text-xs font-medium uppercase tracking-wider">Total Dokumen Arsip</h2>
                         <div class="flex items-end gap-3 mt-2">
                             <span class="text-4xl font-bold text-white">${window.dataArsip.length}</span>
-                            <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20 gap-1">
-                                ${window.getIcon('check-circle', 'w-3 h-3')} AI SIKD Aktif
+                            <span class="text-monster text-[10px] font-medium mb-1.5 flex items-center bg-monster/10 px-2 py-0.5 rounded-full border border-monster/20">
+                                <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI SIKD Aktif
                             </span>
                         </div>
                     </div>
@@ -489,27 +458,30 @@
                     </div>
 
                     <h3 class="text-base font-bold text-white mb-4 px-1">Arsip Terbaru</h3>
+
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${listHtml}</div>
                 </div>`;
+            lucide.createIcons();
         };
 
         window.renderSearch = function() {
             const list = window.isLoading ? window.createSkeletonCard().repeat(5) : window.dataArsip.map(f => window.createFileCard(f)).join('');
-            document.getElementById('app-content').innerHTML = `
+            document.getElementById('view-search').innerHTML = `
                 <div class="pt-2 h-full flex flex-col">
                     <div class="relative mb-6">
                         <input type="text" id="searchInput" placeholder="Cari No Surat, Perihal, Yth, Format..." class="w-full glass-input rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-slate-500 shadow-inner border-monster/50" onkeyup="handleSearch()">
-                        <div class="absolute left-4 top-4 text-monster">${window.getIcon('search', 'w-5 h-5')}</div>
+                        <i data-lucide="search" class="absolute left-4 top-4 text-monster w-5 h-5"></i>
                     </div>
                     <div id="searchResults" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
+            lucide.createIcons();
             if(!window.isLoading) document.getElementById('searchInput')?.focus();
         };
 
         window.renderInput = function() {
-            document.getElementById('app-content').innerHTML = `
+            document.getElementById('view-input').innerHTML = `
                 <div class="pt-2 pb-6">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2">${window.getIcon('cloud-upload', 'text-monster w-5 h-5')} Entri Data Baru</h2>
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="cloud-upload" class="text-monster w-5 h-5"></i> Entri Data Baru</h2>
                     <div class="flex gap-2 mb-6 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 shadow-inner">
                         <button type="button" onclick="switchUploadMode('file')" id="tab-file" class="flex-1 py-3 text-xs font-bold rounded-lg bg-monster text-darkBg shadow-lg transition-all">Upload Berkas</button>
                         <button type="button" onclick="switchUploadMode('link')" id="tab-link" class="flex-1 py-3 text-xs font-bold rounded-lg text-slate-400 transition-all">Tautan Link</button>
@@ -519,8 +491,8 @@
                         <div id="mode-file" class="space-y-5">
                             <div class="border-2 border-dashed border-slate-600 rounded-2xl p-6 text-center hover:border-monster hover:bg-monster/5 transition-all cursor-pointer relative group flex flex-col items-center">
                                 <input type="file" id="fileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="window.handleFileChange(this)">
-                                <div id="uploadIconContainer" class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-monster/20 transition-all">
-                                    ${window.getIcon('file-up', 'w-7 h-7 text-slate-400 group-hover:text-monster transition-colors')}
+                                <div class="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-monster/20 transition-all">
+                                    <i id="uploadIcon" data-lucide="file-up" class="w-7 h-7 text-slate-400 group-hover:text-monster transition-colors"></i>
                                 </div>
                                 <p class="text-sm text-slate-300 font-bold" id="fileNameDisplay">Ketuk untuk memilih Surat/Berkas</p>
                             </div>
@@ -545,51 +517,55 @@
                             </div>
                         </div>
                         <button type="button" id="btnSubmit" onclick="window.handleUpload()" class="w-full bg-monster hover:bg-monsterDark text-darkBg font-bold py-4 rounded-xl shadow-lg shadow-monster/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                            <span id="btnIconContainer">${window.getIcon('save', 'w-5 h-5')}</span> Simpan Arsip 
+                            <i data-lucide="save" class="w-5 h-5"></i> Simpan Arsip 
                         </button>
                     </div>
                 </div>`;
+            lucide.createIcons();
         };
 
         window.renderDrive = () => {
             const list = window.isLoading ? window.createSkeletonCard().repeat(5) : window.dataArsip.map(f => window.createFileCard(f)).join('');
-            document.getElementById('app-content').innerHTML = `
+            document.getElementById('view-drive').innerHTML = `
                 <div class="pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2">${window.getIcon('hard-drive', 'text-monster w-5 h-5')} Arsip Induk</h2>
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="database" class="text-monster w-5 h-5"></i> Arsip Induk</h2>
                     <div class="glass p-4 rounded-2xl mb-6 flex justify-between items-center shadow-md border-monster/20">
                         <div class="flex items-center gap-3">
-                            <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]">${window.getIcon('cloud-lightning', 'w-5 h-5')}</div>
+                            <div class="p-2.5 bg-monster/10 rounded-xl text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cloud-lightning" class="w-5 h-5"></i></div>
                             <div><p class="text-sm text-white font-bold leading-tight">Server Terhubung</p><p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">${window.dataArsip.length} Dokumen Indeks</p></div>
                         </div>
-                        <button onclick="fetchData(true)" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30">${window.getIcon('refresh-cw', 'w-5 h-5')}</button>
+                        <button onclick="fetchData(true)" class="p-3 text-slate-400 hover:text-monster hover:bg-monster/10 rounded-xl transition-all border border-transparent hover:border-monster/30"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
                     </div>
                     <div class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 pb-6">${list}</div>
                 </div>`;
+            lucide.createIcons();
         };
 
         window.renderSettings = () => {
-            document.getElementById('app-content').innerHTML = `
+            document.getElementById('view-settings').innerHTML = `
                 <div class="pt-2">
-                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2">${window.getIcon('sliders-horizontal', 'text-monster w-5 h-5')} Konfigurasi SIKD</h2>
+                    <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="text-monster w-5 h-5"></i> Konfigurasi SIKD</h2>
                     <div class="glass p-6 rounded-3xl space-y-6">
                         <div class="flex items-center gap-4 p-4 rounded-2xl border border-monster/30 bg-monster/5">
-                            <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]">${window.getIcon('cpu', 'w-5 h-5')}</div>
+                            <div class="p-2 bg-monster/20 rounded-full text-monster shadow-[0_0_10px_rgba(57,255,20,0.2)]"><i data-lucide="cpu" class="w-5 h-5"></i></div>
                             <div><p class="text-sm font-bold">Auto-Sync & AI Latar Belakang</p><p class="text-[10px] text-slate-400 uppercase mt-0.5">Memindai Drive & Firebase Otomatis</p></div>
                         </div>
                         <div class="border-t border-slate-700/50 pt-5 space-y-3">
                             <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Link Utama Folder Google Drive</h3>
                             <div class="flex gap-2">
                                 <input type="url" readonly value="${DEFAULT_DRIVE_FOLDER}" class="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-xs text-slate-400 outline-none">
-                                <button type="button" onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-3 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-all shadow-lg shadow-monster/10">${window.getIcon('external-link', 'w-5 h-5')}</button>
+                                <button type="button" onclick="window.open('${DEFAULT_DRIVE_FOLDER}', '_blank')" class="p-3 bg-monster/10 border border-monster/20 text-monster rounded-xl hover:bg-monster/20 transition-all shadow-lg shadow-monster/10"><i data-lucide="external-link" class="w-5 h-5"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>`;
+            lucide.createIcons();
         };
 
         // ==========================================
-        // HANDLERS (Akselerasi Engine)
+        // HANDLERS (Navigasi Super Cepat Berbasis Toggle Class)
         // ==========================================
+
         window.navigate = function(view) {
             if (view === 'settings') {
                 const pass = prompt("Masukkan Password Akses Sistem:");
@@ -599,26 +575,32 @@
                 }
             }
 
-            window.currentView = view; // Mengunci State Navigasi
+            window.currentView = view;
 
-            // Manajemen Highlight Navigasi yang Akurat & Ringan
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                if(btn.id === `nav-${view}`) {
-                    if(view !== 'input') {
-                        btn.classList.add('text-monster');
-                        btn.classList.remove('text-slate-400');
-                    }
-                } else {
-                    if(btn.id !== 'nav-input') {
-                        btn.classList.remove('text-monster');
-                        btn.classList.add('text-slate-400');
-                    }
-                }
+            // Kelola Status Aktif CSS Navigasi Menu
+            document.querySelectorAll('.nav-btn').forEach(btn => { 
+                btn.classList.remove('text-monster'); 
+                btn.classList.add('text-slate-400'); 
             });
             
+            const act = document.getElementById(`nav-${view}`);
+            if(act) { 
+                act.classList.remove('text-slate-400'); 
+                act.classList.add('text-monster'); 
+            }
+
+            // Sembunyikan semua section, lalu munculkan target view secara instan
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+            const targetSec = document.getElementById(`view-${view}`);
+            if(targetSec) targetSec.classList.remove('hidden');
+            
+            // Eksekusi render data internal jika dibutuhkan
             if(view === 'dashboard') window.renderDashboard();
             else if(view === 'search') window.renderSearch();
-            else if(view === 'input') window.renderInput();
+            else if(view === 'input') {
+                // Render form pertama kali saja agar state ketikan user tersimpan awet
+                if(!targetSec.innerHTML) window.renderInput();
+            }
             else if(view === 'drive') window.renderDrive();
             else if(view === 'settings') window.renderSettings();
         };
@@ -629,16 +611,16 @@
                 document.getElementById('fileNameDisplay').innerText = f.name;
                 document.getElementById('docName').value = f.name.substring(0, f.name.lastIndexOf('.'));
                 
-                const iconContainer = document.getElementById('uploadIconContainer');
-                if(iconContainer) {
-                    iconContainer.innerHTML = window.getIcon('loader-2', 'w-7 h-7 animate-spin-cpu text-monster');
-                }
+                const icon = document.getElementById('uploadIcon');
+                icon.setAttribute('data-lucide', 'loader-2');
+                icon.classList.add('animate-spin', 'text-monster');
+                lucide.createIcons();
 
                 setTimeout(() => {
-                    if(iconContainer) {
-                        iconContainer.innerHTML = window.getIcon('file-check-2', 'w-7 h-7 text-monster');
-                    }
-                }, 600);
+                    icon.setAttribute('data-lucide', 'file-check-2');
+                    icon.classList.remove('animate-spin');
+                    lucide.createIcons();
+                }, 800);
 
                 const l = f.name.toLowerCase();
                 let c = 'FILE';
@@ -666,11 +648,11 @@
 
         window.handleUpload = async () => {
             const btn = document.getElementById('btnSubmit');
-            const iconContainer = document.getElementById('btnIconContainer');
             if(!btn) return;
-            
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto"></i>`;
             btn.disabled = true;
-            if(iconContainer) iconContainer.innerHTML = window.getIcon('loader', 'w-5 h-5 animate-spin-cpu mx-auto');
+            lucide.createIcons();
 
             const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -701,7 +683,7 @@
                             const res = await response.json();
                             
                             if(res.status === 'success') {
-                                window.showToast('Berkas Terunggah! AI sedang membaca berkas.'); 
+                                window.showToast('Berkas Terunggah! AI akan memindainya.'); 
                                 
                                 document.getElementById('docName').value = '';
                                 document.getElementById('fileInput').value = '';
@@ -722,8 +704,11 @@
                             } else { 
                                 window.showToast("⚠️ Gagal menyimpan ke Drive", "error"); 
                             }
-                        } catch (e) { window.showToast("⚠️ Masalah Jaringan Server GAS", "error"); }
-                        finally { resetBtn(); }
+                        } catch (e) {
+                            window.showToast("⚠️ Masalah Jaringan GAS", "error"); 
+                        } finally {
+                            resetBtn();
+                        }
                     };
                     reader.readAsDataURL(file);
                 } else {
@@ -756,15 +741,16 @@
             
             function resetBtn() { 
                 if(btn) {
+                    btn.innerHTML = originalContent; 
                     btn.disabled = false; 
-                    if(iconContainer) iconContainer.innerHTML = window.getIcon('save', 'w-5 h-5');
+                    lucide.createIcons(); 
                 }
             }
         };
 
         window.filterFiles = (q) => { 
             window.navigate('search'); 
-            setTimeout(() => { const i = document.getElementById('searchInput'); if(i) { i.value = q; window.handleSearch(); } }, 50); 
+            setTimeout(() => { const i = document.getElementById('searchInput'); if(i) { i.value = q; window.handleSearch(); } }, 100); 
         };
 
         window.handleSearch = () => {
@@ -783,22 +769,24 @@
             
             const container = document.getElementById('searchResults');
             if(container) container.innerHTML = res.length ? res.map(f => window.createFileCard(f)).join('') : `<div class="col-span-full text-center py-10 opacity-50"><p>Dokumen tidak ditemukan</p></div>`;
+            lucide.createIcons();
         };
 
         window.showToast = (msg, type = 'success') => {
             const t = document.getElementById('toast');
-            const wrapper = document.getElementById('toast-icon-wrapper');
+            const icon = document.getElementById('toast-icon');
             document.getElementById('toast-msg').innerText = msg;
             
             if(type === 'error') {
                 t.classList.remove('bg-monster');
                 t.classList.add('bg-red-500', 'text-white');
-                if(wrapper) wrapper.innerHTML = window.getIcon('alert-circle', 'w-5 h-5');
+                icon.setAttribute('data-lucide', 'alert-circle');
             } else {
                 t.classList.remove('bg-red-500');
                 t.classList.add('bg-monster', 'text-darkBg');
-                if(wrapper) wrapper.innerHTML = window.getIcon('check-circle', 'w-5 h-5');
+                icon.setAttribute('data-lucide', 'check-circle');
             }
+            lucide.createIcons();
 
             t.classList.remove('opacity-0', 'translate-y-[-20px]', 'pointer-events-none');
             t.classList.add('opacity-100', 'translate-y-0');
